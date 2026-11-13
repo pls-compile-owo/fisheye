@@ -1,0 +1,138 @@
+# 配置与故障排查
+
+## 依赖解析顺序
+
+fisheye 不写死任何绝对路径。ffmpeg / python / 凭证按这个顺序找：
+
+```
+1. 环境变量        FFMPEG / PYTHON / BILI_CRED
+2. 配置文件        ~/.config/fisheye/config.json
+3. 项目内          <项目>/bin/ffmpeg(.exe)、<项目>/credentials.json、<项目>/.venv/
+4. PATH            系统 PATH 里的 ffmpeg / python
+```
+
+全找不到时直接报错，并给出具体修复命令。
+
+## 环境变量
+
+| 变量 | 作用 | 示例 |
+|---|---|---|
+| `FFMPEG` | ffmpeg 可执行文件 | `C:/tools/ffmpeg/bin/ffmpeg.exe` |
+| `PYTHON` | python（字幕带检测用，可选） | `C:/Python312/python.exe` |
+| `BILI_CRED` | B站登录态 JSON | `D:/secrets/bili.json` |
+| `FISHEYE_HOME` | 数据目录（cache/out 放哪） | `D:/video-cache` |
+
+临时覆盖：
+
+```bash
+# Windows (PowerShell)
+$env:FFMPEG = "C:/tools/ffmpeg/bin/ffmpeg.exe"; node fisheye.mjs selftest
+
+# Linux/macOS
+FFMPEG=/usr/bin/ffmpeg node fisheye.mjs selftest
+```
+
+## 配置文件
+
+`~/.config/fisheye/config.json`（Windows 上是 `C:\Users\<你>\.config\fisheye\config.json`）：
+
+```json
+{
+  "ffmpeg": "C:/tools/ffmpeg/bin/ffmpeg.exe",
+  "python": "C:/Python312/python.exe",
+  "credentials": "D:/secrets/bili.json"
+}
+```
+
+> ⚠️ 用记事本保存可能带 UTF-8 BOM，fisheye 会自己剥掉，但更推荐用 VS Code / 命令行写。
+
+## 凭证文件
+
+```json
+{
+  "sessdata": "xxxxx%2C1xxxxx",
+  "bili_jct": "xxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "buvid3": "XXXX-XXXX-XXXX-XXXX"
+}
+```
+
+获取步骤：
+
+1. 浏览器登录 B 站
+2. F12 → Application（应用）→ Cookies → `https://www.bilibili.com`
+3. 复制 `SESSDATA` / `bili_jct` / `buvid3` 三个值
+
+**注意**：
+- SESSDATA 有时效，过期后需要重新复制（表现为 selftest 的「视频 API」失败）
+- 不要在公共电脑保存，不要提交到 git
+
+## 故障排查
+
+### 先跑自检
+
+```bash
+node fisheye.mjs selftest --deep
+```
+
+每一项都会告诉你哪里坏了。
+
+### 常见错误对照
+
+| 现象 | 原因 | 处理 |
+|---|---|---|
+| `找不到 ffmpeg` | 没装 / 不在 PATH | 装 ffmpeg，或设 `FFMPEG` 环境变量 |
+| `找不到 B站登录态文件` | 没有 credentials.json | 按上面步骤创建 |
+| `视频 API 请求失败` | 网络 / 接口变更（这个接口是公开的，**不吃 cookie**） | 先查网络；再确认 bilibili 接口是否改了 |
+| `官方字幕 API` 显示 `[--]` | 这条视频没字幕轨，**或** SESSDATA 过期（匿名拿不到 AI 字幕） | 换一条有字幕的视频交叉验证；若多条都拿不到，重新登录复制 cookies |
+| 播放直链拿不到 / 403 | SESSDATA 过期（playurl 接口要登录态） | 重新登录复制 cookies |
+| `字幕带实测` 失败 | python 缺 numpy/Pillow | `pip install numpy pillow` |
+| 渲染出的拼图是黑图 | ffmpeg seek 失败 / 视频编码特殊 | 反馈时附上视频 BV 号和 ffmpeg 版本 |
+
+### 性能调优
+
+**视频太长跑不动？**
+
+```bash
+# 分段看
+node fisheye.mjs auto BV1xxx --from 0:00 --to 10:00
+node fisheye.mjs auto BV1xxx --from 10:00 --to 20:00
+```
+
+**缓存太大？**
+
+```bash
+# Windows
+rmdir /s /q cache
+# Linux/macOS
+rm -rf cache
+```
+
+`cache/` 存的是下载的原始 mp4，40 分钟视频约 235 MB。
+
+**想提高密度？**
+
+```bash
+node fisheye.mjs auto BV1xxx --density 4   # 强制 4 秒/帧
+```
+
+注意：密度提高 = 张数增加 = token 成本增加。竖屏视频尤其贵（单张 3793 token）。
+
+**token 预算怎么估？**
+
+```
+总成本 ≈ 官方字幕字数
+       + 拼图张数 × 单张成本
+       + 精读帧数 × 1300
+```
+
+单张拼图成本按面积算：1920×1080 = 1200 token；竖屏 1080×1920 = 3793 token。
+
+## Python 可选依赖
+
+字幕带定位需要：
+
+```bash
+pip install numpy pillow
+```
+
+不装的话：`[字幕]` 那一步会告警并降级为「只看画面」，其他功能不受影响。

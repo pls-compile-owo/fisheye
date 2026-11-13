@@ -1,0 +1,10 @@
+node_modules/
+cache/
+out/
+*.mp4
+*.part
+credentials.json
+fisheye.config.json
+.env
+*.log
+.DS_Store
