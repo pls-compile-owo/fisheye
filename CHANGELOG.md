@@ -2,6 +2,44 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.7.1] - 2026-11-14
+
+### Added
+
+- `auto --resume`：断点续跑完整版——manifest 与计划一致且拼图齐全时**跳过抽帧**，直接复用已有拼图继续后续阶段（`--force` 强制重跑）。
+
+## [0.7.0] - 2026-11-14
+
+### Added
+
+- `batch <清单文件|条目...> [--concurrency N]` 子命令：一次处理多个 BV/本地文件/URL（`lib/batch.mjs`）。
+- 字幕翻译：外文视频的官方字幕会同时读取 B站 翻译轨（`translated` 字段，落盘 `<BV>-official-subs-translated.txt`）。
+- 断点续跑基础（`lib/resume.mjs`）：manifest 记录计划/阶段，重跑时提示可复用产物（`--force` 强重跑）。
+- 进度辅助（`lib/progress.mjs`）：分段抽帧进度、阶段计时。
+- MCP server 入包（`mcp-video-server.js`，可选组件，需自装 @modelcontextprotocol/sdk / zod）+ 中英 README + CONFIG 文档。
+
+## [0.6.0] - 2026-11-14
+
+### Added
+
+- OCR 画面文字识别：`ocr <图片路径>` 子命令（tesseract，可选）；selftest 显示 OCR 可用性（`lib/ocr.mjs`）。
+- 任意平台视频：`url <视频链接>` 子命令（yt-dlp，可选，下载后走本地视频流程）（`lib/ytdlp.mjs`）。
+- `clean [--target cache|out|all] [--yes]` 子命令：清理缓存/产物（dry-run 默认，--yes 才删）。
+- `auto --audio`：无官方字幕时自动用 whisper 转写台词，跳过烧录字幕带。
+
+### Changed
+
+- selftest 增加 OCR / yt-dlp 检查项。
+
+## [0.5.0] - 2026-11-14
+
+### Added
+
+- `transcribe <BV> [--lang zh]` 子命令：用 whisper.cpp 转写音频，文本落 `out/<BV>-audio-transcript.txt`。
+- `lib/audio.mjs` 自动探测 whisper.cpp 官方 Windows 包解压结构（`whisper/Release/`）。
+- 单元测试覆盖扩展到全部模块：retry / budget / i18n / frame / env / audio / bili（共 46 个用例）。
+- 外部自检脚本增加「模块导入冒烟」（10 个 lib 模块全部可加载）。
+
 ## [0.4.2] - 2026-11-14
 
 ### Fixed

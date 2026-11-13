@@ -159,6 +159,15 @@ node fisheye.mjs grab BV1ziWP6qENy 82.5,145.0
        00:27  弹幕热区  —— 弹幕热区 19 条
 ```
 
+## 断点续跑
+
+长视频处理中断后，重新跑同样的命令会提示可复用产物：
+
+```bash
+node fisheye.mjs auto BV1xxx --budget 20000 --resume   # 跳过已抽帧阶段，复用拼图
+node fisheye.mjs auto BV1xxx --budget 20000 --force    # 强制全部重跑
+```
+
 ## 命令
 
 | 命令 | 作用 |
@@ -204,6 +213,46 @@ node fisheye.mjs local <视频文件> [--grid 3x3] [--from 30] [--to 90]
 
 不依赖 B站 登录与字幕：ffmpeg 解析时长 → 按 grid 等间隔抽帧拼图 → 输出 `SHEET: <拼图路径>`。
 把拼图路径交给模型 `read_image` 即可"看"本地视频。适合 mp4/mkv/avi/mov/webm。
+
+## 音频转写
+
+装了 whisper.cpp 后，可以给无字幕视频做语音转写：
+
+```bash
+node fisheye.mjs transcribe BV1xxx [--lang zh]
+```
+
+自动探测顺序：`FISHEYE_WHISPER` 环境变量 → PATH → 常见安装路径（含 `~/.dsh/surfcore/whisper/Release/`）。
+模型放 `~/.dsh/surfcore/whisper/`（`ggml-*.bin`）或用 `FISHEYE_WHISPER_MODEL` 指定。
+转写文本落 `out/<BV>-audio-transcript.txt`。
+
+## OCR（图片文字识别）
+
+装了 tesseract 后可以识别图片/画面里的文字：
+
+```bash
+node fisheye.mjs ocr screenshot.png [--lang chi_sim+eng]
+```
+
+自动探测 `FISHEYE_TESSERACT` → PATH → 常见安装路径；语言包缺 `chi_sim` 时自动降级到 `eng`。
+识别结果落 `out/<图片名>.ocr.txt`。
+
+## 任意平台视频（yt-dlp）
+
+装了 yt-dlp 后可以直接给任意平台（YouTube/抖音/Twitter…）的链接：
+
+```bash
+node fisheye.mjs url "https://www.youtube.com/watch?v=xxx"
+```
+
+下载（yt-dlp）→ 自动走本地视频抽帧流程。探测顺序：`FISHEYE_YTDLP` → PATH → 常见安装路径。
+
+## 清理
+
+```bash
+node fisheye.mjs clean                    # 预览将清理的缓存/产物（dry-run）
+node fisheye.mjs clean --target out --yes # 实际删除 out/
+```
 
 ## 它怎么工作
 
@@ -252,7 +301,7 @@ B 站的弹幕密度本身就是内容信号。实测一条 40 分钟视频：�
 ## 开发
 
 ```bash
-node --test test/                # 单元测试（参数解析 / 弹幕分析）
+node --test test/                # 单元测试（全部模块：46 个用例）
 node test-danmaku-filter.js      # 弹幕过滤规则测试（51 条用例）
 node fisheye.mjs selftest --deep # 含抽帧/字幕带实测的自检
 ```

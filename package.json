@@ -1,6 +1,6 @@
 {
   "name": "@pls-compile-owo/fisheye",
-  "version": "0.4.2",
+  "version": "0.7.1",
   "description": "Token-budget-aware video understanding for AI agents: official subtitles -> burned-in subtitle band -> danmaku highlights -> adaptive keyframe grids -> targeted refine.",
   "type": "module",
   "bin": {
@@ -18,7 +18,8 @@
     "README.en.md",
     "CHANGELOG.md",
     "LICENSE",
-    "docs/"
+    "docs/",
+    "mcp-video-server.js"
   ],
   "engines": {
     "node": ">=18"

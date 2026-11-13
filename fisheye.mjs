@@ -15,23 +15,29 @@
 // · 拼图每格顺序固定，manifest 按「从左到右、从上到下」记录时间，供 agent 对照
 // · 拼图与精读用同一种 seek，保证同一时间戳取到同一帧
 // · 所有子进程用 stdio:'ignore'（沙箱禁管道捕获），数据走临时文件
+import fs from 'node:fs'
 import path from 'node:path'
 import { PKG_DIR, WS, CFG_FILE, FFMPEG, CRED } from './lib/env.mjs'
 import { parseTime, num, pageNum } from './lib/util.mjs'
 import { t } from './lib/i18n.mjs'
-import { stageAuto, stageGrid, stageSubs, stageSelftest, stageRefine, stageGrab, stageLocal } from './lib/stages.mjs'
+import { stageAuto, stageGrid, stageSubs, stageSelftest, stageRefine, stageGrab, stageLocal, stageTranscribe, stageClean, stageOcr, stageUrl, stageBatch } from './lib/stages.mjs'
 
 const IS_SELFTEST = process.argv[2] === 'selftest'
 
 // local 处理本地文件，不需要 B站 登录态（但仍然需要 ffmpeg）
 const IS_LOCAL = process.argv[2] === 'local'
+// clean / ocr 只动本地文件，不需要 ffmpeg 与 B站 凭证
+const IS_CLEAN = process.argv[2] === 'clean'
+const IS_OCR = process.argv[2] === 'ocr'
+// url 需要 yt-dlp + ffmpeg，但不需要 B站 凭证
+const IS_URL = process.argv[2] === 'url'
 
-if (!IS_SELFTEST) {
+if (!IS_SELFTEST && !IS_CLEAN && !IS_OCR) {
   if (!FFMPEG) {
     console.error(t('err.ffmpeg.missing', { binDir: path.join(PKG_DIR, 'bin'), cfgFile: CFG_FILE }))
     process.exit(2)
   }
-  if (!IS_LOCAL && !CRED) {
+  if (!IS_LOCAL && !IS_CLEAN && !IS_OCR && !IS_URL && !CRED) {
     console.error(t('err.cred.missing', { credPath: path.join(WS, 'credentials.json') }))
     process.exit(2)
   }
@@ -70,7 +76,68 @@ if (stage === 'local') {
   }
   process.exit(0)
 }
-if (!stage || (stage !== 'selftest' && !bvid)) {
+
+if (stage === 'ocr') {
+  const img = argv[1]
+  if (!img || img.startsWith('--')) {
+    console.error(t('err.ocr.usage'))
+    process.exit(2)
+  }
+  try {
+    await stageOcr(img, { lang: opt('lang', null) })
+  } catch (error) {
+    console.error(t('err.local.failed', { message: error?.message ?? error }))
+    process.exit(1)
+  }
+  process.exit(0)
+}
+if (stage === 'url') {
+  const link = argv[1]
+  if (!link || link.startsWith('--')) {
+    console.error(t('err.url.usage'))
+    process.exit(2)
+  }
+  try {
+    await stageUrl(link, {
+      grid: opt('grid', '3x3'),
+      from: parseTime(opt('from', null), 'from'),
+      to: parseTime(opt('to', null), 'to')
+    })
+  } catch (error) {
+    console.error(t('err.local.failed', { message: error?.message ?? error }))
+    process.exit(1)
+  }
+  process.exit(0)
+}
+
+
+if (stage === 'batch') {
+  const arg = argv[1]
+  const listText = (arg && !arg.startsWith('--') && fs.existsSync(arg))
+    ? fs.readFileSync(arg, 'utf8')
+    : argv.slice(1).filter((a) => !a.startsWith('--')).join('\n')
+  if (!listText.trim()) {
+    console.error(t('err.batch.usage'))
+    process.exit(2)
+  }
+  try {
+    await stageBatch(listText, {
+      concurrency: num(opt('concurrency', 1), 'concurrency', { min: 1, max: 8 }),
+      budget: opt('budget', null) ? num(opt('budget'), 'budget', { min: 2000, max: 200000 }) : 20000,
+      grid: opt('grid', '3x3'),
+      audio: argv.includes('--audio'),
+      lang: opt('lang', null),
+      from: parseTime(opt('from', null), 'from'),
+      to: parseTime(opt('to', null), 'to')
+    })
+  } catch (error) {
+    console.error(t('err.local.failed', { message: error?.message ?? error }))
+    process.exit(1)
+  }
+  process.exit(0)
+}
+
+if (!stage || (stage !== 'selftest' && stage !== 'clean' && stage !== 'ocr' && stage !== 'url' && stage !== 'batch' && !bvid)) {
   if (rawBvid && stage !== 'selftest') {
     console.error(`${t('err.bvFormat', { raw: rawBvid })}\n`)
   }
@@ -94,7 +161,9 @@ try {
     await stageAuto(bvid,
       num(opt('budget', 20000), 'budget', { min: 2000, max: 200000 }),
       { density: d === null ? null : num(d, 'density', { min: 0.5, max: 60 }), page, from, to,
-        useDanmakuFrames: !argv.includes('--no-danmaku-frames') })
+        useDanmakuFrames: !argv.includes('--no-danmaku-frames'),
+        audio: argv.includes('--audio'), audioLang: opt('lang', null),
+        resume: argv.includes('--resume'), force: argv.includes('--force') })
   } else if (stage === 'refine') {
     await stageRefine(bvid, { template: argv.includes('--template'), decisions: opt('decisions', null) })
   } else if (stage === 'grid') {
@@ -108,6 +177,11 @@ try {
       opt('band', 'auto'),
       { page, range })
   } else if (stage === 'grab') await stageGrab(bvid, argv[2] ?? '', { page })
+  else if (stage === 'clean') {
+    // 清理缓存/产物：本地操作，不需要 BV 号
+    await stageClean({ target: opt('target', 'all'), yes: argv.includes('--yes') })
+  }
+  else if (stage === 'transcribe') await stageTranscribe(bvid, { page, lang: opt('lang', null) })
   else { console.error(t('err.unknownStage', { stage })); process.exit(2) }
 } catch (e) {
   console.error(t('err.fatal', { message: e.message }))
