@@ -75,6 +75,8 @@ npm link   # 可选：装成全局命令
 | `FISHEYE_LANG` | CLI 输出语言：`zh`（默认）/ `en` |
 | `FISHEYE_TOKENS_PER_GRID` / `FISHEYE_TOKENS_PER_SUBS` / `FISHEYE_TOKENS_PER_FINE` | 单张拼图 / 字幕带 / 精读帧的 token 估算覆盖（默认 1200 / 1000 / 1300） |
 | `FISHEYE_TOKEN_MODEL` | 按模型 tokenizer 修正估算：`gpt`（1.0）/ `qwen`（1.35）/ `gemini`（0.8）/ 数字 |
+| `FISHEYE_WHISPER` | whisper.cpp 可执行文件路径（音频转写，可选；不装则跳过） |
+| `FISHEYE_WHISPER_MODEL` | whisper 模型文件（ggml-*.bin，可选） |
 | `FISHEYE_HOME` | 数据目录（cache/out 位置，默认项目目录） |
 | `FFMPEG` / `PYTHON` / `BILI_CRED` | 工具与登录态路径覆盖 |
 
