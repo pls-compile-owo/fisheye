@@ -68,6 +68,16 @@ npm link   # 可选：装成全局命令
 
 > ⚠️ 这个文件已被 `.gitignore` 排除，**永远不要提交**。
 
+### 环境变量
+
+| 变量 | 说明 |
+|---|---|
+| `FISHEYE_LANG` | CLI 输出语言：`zh`（默认）/ `en` |
+| `FISHEYE_TOKENS_PER_GRID` / `FISHEYE_TOKENS_PER_SUBS` / `FISHEYE_TOKENS_PER_FINE` | 单张拼图 / 字幕带 / 精读帧的 token 估算覆盖（默认 1200 / 1000 / 1300） |
+| `FISHEYE_TOKEN_MODEL` | 按模型 tokenizer 修正估算：`gpt`（1.0）/ `qwen`（1.35）/ `gemini`（0.8）/ 数字 |
+| `FISHEYE_HOME` | 数据目录（cache/out 位置，默认项目目录） |
+| `FFMPEG` / `PYTHON` / `BILI_CRED` | 工具与登录态路径覆盖 |
+
 ### 依赖路径（一般不用管）
 
 fisheye 按这个顺序找 ffmpeg / python / 凭证：

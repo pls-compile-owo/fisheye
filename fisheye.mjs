@@ -18,6 +18,7 @@
 import path from 'node:path'
 import { PKG_DIR, WS, CFG_FILE, FFMPEG, CRED } from './lib/env.mjs'
 import { parseTime, num, pageNum } from './lib/util.mjs'
+import { t } from './lib/i18n.mjs'
 import { stageAuto, stageGrid, stageSubs, stageSelftest, stageRefine, stageGrab, stageLocal } from './lib/stages.mjs'
 
 const IS_SELFTEST = process.argv[2] === 'selftest'
@@ -27,28 +28,11 @@ const IS_LOCAL = process.argv[2] === 'local'
 
 if (!IS_SELFTEST) {
   if (!FFMPEG) {
-    console.error(`找不到 ffmpeg。
-
-安装方式（任选其一）：
-  1. 装到 PATH：https://ffmpeg.org/download.html （Windows 用 gyan.dev 的 build）
-  2. 放项目里：把 ffmpeg 可执行文件放到 ${path.join(PKG_DIR, 'bin')}/
-  3. 设环境变量：FFMPEG=<ffmpeg 完整路径>
-  4. 写配置：${CFG_FILE} 里加 {"ffmpeg": "<完整路径>"}`)
+    console.error(t('err.ffmpeg.missing', { binDir: path.join(PKG_DIR, 'bin'), cfgFile: CFG_FILE }))
     process.exit(2)
   }
   if (!IS_LOCAL && !CRED) {
-    console.error(`找不到 B站登录态文件。
-
-创建 ${path.join(WS, 'credentials.json')}，内容：
-  {
-    "sessdata": "<B站 SESSDATA>",
-    "bili_jct": "<bili_jct>",
-    "buvid3": "<buvid3>"
-  }
-获取方法：浏览器登录 B站 → F12 → Application → Cookies → bilibili.com，
-复制这三个值。或用环境变量 BILI_CRED=<文件路径> 指向已有文件。
-
-（也可以只跑 selftest 先看环境是否就绪：node fisheye.mjs selftest）`)
+    console.error(t('err.cred.missing', { credPath: path.join(WS, 'credentials.json') }))
     process.exit(2)
   }
 }
@@ -71,7 +55,7 @@ const opt = (name, dflt) => {
 if (stage === 'local') {
   const fileArg = argv[1]
   if (!fileArg || fileArg.startsWith('--')) {
-    console.error('用法: node fisheye.mjs local <视频文件> [--grid 3x3] [--from t] [--to t]')
+    console.error(t('err.local.usage'))
     process.exit(2)
   }
   try {
@@ -81,25 +65,16 @@ if (stage === 'local') {
       to: parseTime(opt('to', null), 'to')
     })
   } catch (error) {
-    console.error(`[错误] ${error?.message ?? error}`)
+    console.error(t('err.local.failed', { message: error?.message ?? error }))
     process.exit(1)
   }
   process.exit(0)
 }
 if (!stage || (stage !== 'selftest' && !bvid)) {
   if (rawBvid && stage !== 'selftest') {
-    console.error(`[错误] BV 号格式不对：${rawBvid}（应为 BV + 10 位字母数字，如 BV1ziWP6qENy）\n`)
+    console.error(`${t('err.bvFormat', { raw: rawBvid })}\n`)
   }
-  console.log('用法:')
-  console.log('  node fisheye.mjs auto <BV> [--budget 20000] [--density 6]      ← 推荐：自动规划并铺网')
-  console.log('  node fisheye.mjs refine <BV> --template                         ← 生成精读决策模板')
-  console.log('  node fisheye.mjs refine <BV> --decisions <file.json>            ← 按模型判断精读')
-  console.log('  node fisheye.mjs refine <BV>                                    ← 几何兜底（零 token）')
-  console.log('  node fisheye.mjs grid <BV> [--chunk 60] [--grid 3x3]')
-  console.log('  node fisheye.mjs subs <BV> [--count 12] [--band auto|0.22]')
-  console.log('  node fisheye.mjs grab <BV> <t1,t2,t3>                           ← 手动指定时间点')
-  console.log('  node fisheye.mjs local <视频文件> [--grid 3x3] [--from t] [--to t]  ← 看本地视频（mp4/mkv/...）')
-  console.log('  node fisheye.mjs selftest [--deep]                              ← 自检（依赖/凭证/API/缓存/磁盘）')
+  console.log(t('usage'))
   process.exit(2)
 }
 // 顶层错误兜底：不要把堆栈直接甩给用户
@@ -133,9 +108,9 @@ try {
       opt('band', 'auto'),
       { page, range })
   } else if (stage === 'grab') await stageGrab(bvid, argv[2] ?? '', { page })
-  else { console.error('未知阶段: ' + stage); process.exit(2) }
+  else { console.error(t('err.unknownStage', { stage })); process.exit(2) }
 } catch (e) {
-  console.error(`\n错误：${e.message}`)
+  console.error(t('err.fatal', { message: e.message }))
   if (process.env.FISHEYE_DEBUG) console.error(e.stack)
   process.exit(1)
 }
