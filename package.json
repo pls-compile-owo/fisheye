@@ -1,6 +1,6 @@
 {
   "name": "@pls-compile-owo/fisheye",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Token-budget-aware video understanding for AI agents: official subtitles -> burned-in subtitle band -> danmaku highlights -> adaptive keyframe grids -> targeted refine.",
   "type": "module",
   "bin": {
@@ -8,11 +8,15 @@
   },
   "files": [
     "fisheye.mjs",
+    "lib/",
     "danmaku-filter.mjs",
     "analyze_subs.py",
     "test-danmaku-filter.js",
+    "test/",
     "credentials.example.json",
     "README.md",
+    "README.en.md",
+    "CHANGELOG.md",
     "LICENSE",
     "docs/"
   ],
@@ -20,7 +24,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "test": "node test-danmaku-filter.js",
+    "test": "node --test test/ && node test-danmaku-filter.js",
     "selftest": "node fisheye.mjs selftest --deep"
   },
   "keywords": [

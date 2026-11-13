@@ -2,6 +2,18 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.3.0] - 2026-11-14
+
+### Changed
+
+- 主程序拆分为模块：`lib/env.mjs`（路径/依赖解析）、`lib/util.mjs`（时间/参数工具）、`lib/bili.mjs`（B站 API）、`lib/frame.mjs`（抽帧与时间点）、`lib/danmaku.mjs`（弹幕分析）、`lib/stages.mjs`（六个子命令）；入口只保留 CLI 分发。
+- `selftest`：缓存目录缺失时不再报错。
+
+### Added
+
+- 单元测试（`node --test`）：参数解析、弹幕分析。
+- GitHub Actions CI：Node 18/20/22 语法检查 + 单元测试。
+
 ## [0.2.1] - 2026-11-14
 
 首个公开发布版本。

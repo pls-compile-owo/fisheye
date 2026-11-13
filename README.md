@@ -240,9 +240,23 @@ B 站的弹幕密度本身就是内容信号。实测一条 40 分钟视频：�
 ## 开发
 
 ```bash
-node test-danmaku-filter.js      # 弹幕过滤规则单元测试（48 用例）
-node fisheye.mjs selftest --deep  # 含抽帧/字幕带实测的自检
+node --test test/                # 单元测试（参数解析 / 弹幕分析）
+node test-danmaku-filter.js      # 弹幕过滤规则测试（51 条用例）
+node fisheye.mjs selftest --deep # 含抽帧/字幕带实测的自检
 ```
+
+项目结构：
+
+| 文件 | 职责 |
+|---|---|
+| `fisheye.mjs` | CLI 入口（参数解析 / 依赖检查 / 命令分发） |
+| `lib/env.mjs` | 路径与依赖解析（ffmpeg / python / 凭证 / 配置） |
+| `lib/util.mjs` | 时间格式化 / 参数校验 / 文件头探测 |
+| `lib/bili.mjs` | B站 API（视频信息 / WBI 签名 / 官方字幕 / 弹幕） |
+| `lib/frame.mjs` | 抽帧与时间点选择（场景检测 / 字幕带定位 / 单帧截取） |
+| `lib/danmaku.mjs` | 弹幕分析（广告段检测 / 热区摘要） |
+| `lib/stages.mjs` | 六个子命令（auto / grid / subs / refine / grab / local） |
+| `test/` | `node:test` 单元测试；CI 见 `.github/workflows/ci.yml` |
 
 更多文档：
 
