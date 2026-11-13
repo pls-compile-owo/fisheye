@@ -43,11 +43,13 @@ node fisheye.mjs auto BV1xxx --budget 20000
 **可选**：Python 3.9+（带 `numpy` 和 `Pillow`）——不装也能用，只是「烧录字幕带」功能会降级
 
 ```bash
+# 方式一：npm 全局安装（推荐）
+npm i -g @pls-compile-owo/fisheye
+
+# 方式二：从源码
 git clone <this-repo>
 cd fisheye
-
-# 可选：装成全局命令
-npm link
+npm link   # 可选：装成全局命令
 ```
 
 ### 配置 B 站登录态

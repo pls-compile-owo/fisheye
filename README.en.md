@@ -37,6 +37,10 @@ Then refine only a few key moments at original resolution.
 Requirements: Node.js 18+, ffmpeg.
 
 ```bash
+# Option 1: install from npm (recommended)
+npm i -g @pls-compile-owo/fisheye
+
+# Option 2: from source
 git clone <repo> && cd fisheye
 cp credentials.example.json credentials.json    # fill SESSDATA / bili_jct / buvid3
 node fisheye.mjs selftest --deep
