@@ -79,6 +79,16 @@ node fisheye.mjs clean [--target out] [--yes]     # clean artifacts
 `auto --resume` reuses existing grids and skips frame extraction; `--force` re-runs everything.
 Optional integrations: whisper.cpp (audio), tesseract (OCR), yt-dlp (any URL), and `mcp-video-server.js` (MCP tools, needs `npm i @modelcontextprotocol/sdk zod`).
 
+## Self-check
+
+```bash
+node fisheye.mjs selftest        # dependencies / credentials / APIs / optional tools / disk
+node fisheye.mjs selftest --deep # plus frame-extraction and subtitle-band probes
+```
+
+Marks: `[OK]` pass, `[--]` skipped (optional tool missing / no data), `[!!]` failed.
+Failures print fix hints at the end.
+
 ## Docs
 
 - `docs/DESIGN.md` — design rationale

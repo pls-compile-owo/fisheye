@@ -283,6 +283,25 @@ node fisheye.mjs clean                    # 预览将清理的缓存/产物（dr
 node fisheye.mjs clean --target out --yes # 实际删除 out/
 ```
 
+## 自检
+
+```bash
+node fisheye.mjs selftest        # 快速检查依赖 / 凭证 / API / 可选组件 / 磁盘
+node fisheye.mjs selftest --deep # 额外做抽帧 + 字幕带实测（需缓存视频）
+```
+
+检查项：
+
+| 类别 | 检查内容 |
+|---|---|
+| 基础 | Node 版本、ffmpeg、python（可选）、analyze_subs.py |
+| 环境 | 输出目录可写、B站 凭证、缓存目录、磁盘剩余 |
+| API | 视频 API、弹幕 API、官方字幕 API（含翻译轨） |
+| 可选组件 | 音频转写（whisper）、OCR（tesseract）、yt-dlp |
+
+输出标记：`[OK]` 通过、`[--]` 跳过（可选依赖未装/无数据）、`[!!]` 失败。
+失败时末尾会打印修复提示；`--deep` 会额外实测抽帧与字幕带检测。
+
 ## MCP server（可选）
 
 `mcp-video-server.js` 把 fisheye 包装成 [MCP](https://modelcontextprotocol.io/)（Model Context Protocol）工具，让支持 MCP 的 agent 环境（DSH / Claude Code / Cursor 等）**不必自己拼命令行**就能看视频。
