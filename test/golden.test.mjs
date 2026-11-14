@@ -52,3 +52,32 @@ for (const { file, data } of fixtures) {
     for (let i = 1; i < r.times.length; i++) assert.ok(r.times[i] > r.times[i - 1])
   })
 }
+
+// ── 广告段真值评估（人工标注的广告段 vs 检测结果）────────────────────────
+const adTruthDir = path.join(path.dirname(fileURLToPath(import.meta.url)), 'golden', 'ad-truth')
+const adTruthFiles = fs.existsSync(adTruthDir) ? fs.readdirSync(adTruthDir).filter((f) => f.endsWith('.json')) : []
+
+test('广告真值样本存在', () => {
+  assert.ok(adTruthFiles.length >= 1, '至少 1 条人工标注的广告真值')
+})
+
+for (const file of adTruthFiles) {
+  const data = JSON.parse(fs.readFileSync(path.join(adTruthDir, file), 'utf8'))
+  test(`${data.bvid}（${String(data.title).slice(0, 20)}）：广告段检测覆盖真值`, () => {
+    const segs = detectAdSegments(data.danmaku, data.duration)
+    let bestCover = 0
+    for (const truth of data.truthAdSegments) {
+      for (const s of segs) {
+        const overlap = Math.max(0, Math.min(s.to, truth.to) - Math.max(s.from, truth.from))
+        bestCover = Math.max(bestCover, overlap / Math.max(1, truth.to - truth.from))
+      }
+    }
+    assert.ok(bestCover >= 0.8, `至少覆盖真值广告段的 80%（实际 ${(bestCover * 100).toFixed(0)}%）`)
+    // 无片头/片尾低置信度段（片头片尾弹幕少是正常现象）
+    for (const s of segs) {
+      if (s.confidence === 'low') {
+        assert.ok(s.from >= 60 && s.to <= data.duration - 60, `低置信度段不应出现在片头/片尾：${s.ts}`)
+      }
+    }
+  })
+}

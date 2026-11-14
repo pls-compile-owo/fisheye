@@ -2,6 +2,16 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.8.3] - 2026-11-14
+
+### Fixed
+
+- 广告段检测：片头/片尾 60s 内的低置信度段不再判为广告（片头低弹幕是正常现象，首次人工真值样本 BV1WhaA6hE7s 暴露的误报）。
+
+### Added
+
+- 广告段真值样本（`test/golden/ad-truth/`）：人工标注广告段 + golden 测试验证覆盖率 ≥80% 且无片头片尾误报。
+
 ## [0.8.2] - 2026-11-14
 
 ### Fixed
