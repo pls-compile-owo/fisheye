@@ -65,6 +65,11 @@ for (const file of adTruthFiles) {
   const data = JSON.parse(fs.readFileSync(path.join(adTruthDir, file), 'utf8'))
   test(`${data.bvid}（${String(data.title).slice(0, 20)}）：广告段检测覆盖真值`, () => {
     const segs = detectAdSegments(data.danmaku, data.duration)
+    // 人工确认无广告的视频：检测结果必须为空（防误报）
+    if (!data.truthAdSegments.length) {
+      assert.equal(segs.length, 0, '人工确认无广告的视频不应检测出广告段：' + segs.map((s) => s.ts).join(','))
+      return
+    }
     let bestCover = 0
     for (const truth of data.truthAdSegments) {
       for (const s of segs) {
