@@ -2,6 +2,26 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.9.2] - 2026-11-14
+
+### Fixed（外部评审问题修复）
+
+- **广告检测 confidence 与六路信号一致**：字幕关键词 / 数字打点 / 消费回溯 / 片头强信号命中直接判 high（此前只有弹幕关键词才算 high，这些信号不参与「广告不占帧/精读避开」）。
+- 消费回溯（buy）要求附近 ≥2 条购买信号，避免观众正常讨论「买了」误报。
+- **ensureMp4 流式下载**：不再全量读进内存；超时语义改为「连续 60s 无新数据才中止」，大文件不再被 5 分钟总超时误杀。
+- **cleanupVideoSessions** 只清理 mtime 超过 2 小时的僵尸会话，不再误删并发进程正在用的会话。
+- **stageLocal 时长探测加 -t 0**：只读 header 立即退出（实测 30s→0.4s），不再解码全片。
+- `detectScenes` 开头补 mkdirSync(OUT)（单独跑 grid 时场景检测不再静默失效）。
+- 清理未使用导入；frame.mjs 移除未用的 os/spawnSync。
+- stageGrab 过滤负数时间点；stageSubs 文件名用实际行数；lowDensity 钳制为 ≥0。
+- getOfficialSubs 质量判定统一走 assessSubtitleQuality（消除两处可能不同步的内联实现）。
+- stageRefine 的 decisions 越界校验改用 manifest.range（区间外点不再被放过）。
+- 精读日志说明 geo 已含弹幕热区。
+
+### Changed
+
+- **抽 `lib/proc.mjs`**：audio / ocr / ytdlp 三个可选模块的进程探测公共代码（capture/whereAll/spawnable/readText/tmpFile/stripQuotes/resolveFfmpeg）收敛为一份实现（评审指出的最大可维护性问题）。
+
 ## [0.9.1] - 2026-11-14
 
 ### Changed
