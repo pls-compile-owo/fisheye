@@ -2,6 +2,14 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.7.3] - 2026-11-14
+
+### Docs
+
+纯文档同步版本（功能与 0.7.2 一致）。
+
+- README 新增「自检」专节：selftest 检查项、输出标记（[OK]/[--]/[!!]）、--deep 说明。
+
 ## [0.7.2] - 2026-11-14
 
 ### Docs
