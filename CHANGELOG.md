@@ -2,6 +2,16 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.8.0] - 2026-11-14
+
+### Changed
+
+- **auto 默认策略**：无官方字幕时自动尝试 whisper 转写（比抽帧省 token），转写成功则跳过字幕带；用 `--no-audio` 或环境变量 `FISHEYE_AUTO_AUDIO=0` 关闭。`--audio` 保留为显式请求。
+
+### Fixed
+
+- 转写成功后不再多余生成烧录字幕带图。
+
 ## [0.7.3] - 2026-11-14
 
 ### Docs

@@ -232,6 +232,8 @@ node fisheye.mjs transcribe BV1xxx [--lang zh]
 模型放 `~/.dsh/surfcore/whisper/`（`ggml-*.bin`）或用 `FISHEYE_WHISPER_MODEL` 指定。
 转写文本落 `out/<BV>-audio-transcript.txt`。
 
+> **默认策略**：`auto` 发现视频没有官方字幕时，会自动尝试 whisper 转写（口播/播客类比抽帧省 token）；转写文本作为台词源，跳过烧录字幕带。不想用加 `--no-audio` 或设 `FISHEYE_AUTO_AUDIO=0`。
+
 ### 字幕翻译
 
 外文视频（英文/日文等）的官方字幕会同时读取 B站 的**中文翻译轨**（l2 机器翻译），

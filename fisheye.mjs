@@ -162,7 +162,8 @@ try {
       num(opt('budget', 20000), 'budget', { min: 2000, max: 200000 }),
       { density: d === null ? null : num(d, 'density', { min: 0.5, max: 60 }), page, from, to,
         useDanmakuFrames: !argv.includes('--no-danmaku-frames'),
-        audio: argv.includes('--audio'), audioLang: opt('lang', null),
+        audio: argv.includes('--audio') ? true : (argv.includes('--no-audio') ? false : undefined),
+        audioLang: opt('lang', null),
         resume: argv.includes('--resume'), force: argv.includes('--force') })
   } else if (stage === 'refine') {
     await stageRefine(bvid, { template: argv.includes('--template'), decisions: opt('decisions', null) })
