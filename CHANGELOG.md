@@ -2,6 +2,12 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.8.5] - 2026-11-14
+
+### Added
+
+- **片头广告识别**：视频开头 90s 内出现「接广/金主/恰饭/商单/赞助」等强信号弹幕（哪怕 1 条）时，判定 0-60s 为片头广告段（high）。第四个人工真值样本 BV1j6G16dEBF（0-57s 片头广告）暴露的漏报。
+
 ## [0.8.4] - 2026-11-14
 
 ### Changed
