@@ -65,6 +65,20 @@ node fisheye.mjs grab BV1xxx 69.6,75.3
 The CLI prints `SHEET: <path>` — feed that image to your multimodal model via
 `read_image`. (Optional: wrap the CLI in an MCP server if your agent environment supports it.)
 
+## More commands
+
+```bash
+node fisheye.mjs local ./video.mp4 [--grid 4x4]   # local video
+node fisheye.mjs transcribe BV1xxx [--lang zh]    # audio transcription (whisper.cpp)
+node fisheye.mjs ocr image.png [--lang chi_sim+eng] # OCR text (tesseract)
+node fisheye.mjs url "https://..."                # any platform (yt-dlp)
+node fisheye.mjs batch list.txt --concurrency 2   # process many videos
+node fisheye.mjs clean [--target out] [--yes]     # clean artifacts
+```
+
+`auto --resume` reuses existing grids and skips frame extraction; `--force` re-runs everything.
+Optional integrations: whisper.cpp (audio), tesseract (OCR), yt-dlp (any URL), and `mcp-video-server.js` (MCP tools, needs `npm i @modelcontextprotocol/sdk zod`).
+
 ## Docs
 
 - `docs/DESIGN.md` — design rationale

@@ -177,7 +177,13 @@ node fisheye.mjs auto BV1xxx --budget 20000 --force    # 强制全部重跑
 | `subs <BV>` | 只生成字幕带（`--count` 行数、`--band auto\|0.22`） |
 | `refine <BV>` | 挑出值得精读的时间点，**并直接截好原图**（三种模式：模板 / 决策文件 / 几何兜底） |
 | `grab <BV> <t1,t2>` | 按时间点截原分辨率单帧（手动指定） |
-| `selftest [--deep]` | 自检：依赖 / 凭证 / API / 缓存 / 磁盘 |
+| `local <视频文件>` | 本地视频：ffmpeg 抽帧拼图（`--grid`、`--from`/`--to`） |
+| `transcribe <BV>` | 音频转写（whisper.cpp，`--lang zh`） |
+| `ocr <图片>` | OCR 识别图片文字（tesseract，`--lang chi_sim+eng`） |
+| `url <链接>` | 任意平台视频（yt-dlp 下载后走本地流程） |
+| `batch <清单文件\|条目...>` | 批量处理（`--concurrency N` 并发） |
+| `clean [--target cache\|out\|all] [--yes]` | 清理缓存/产物（默认 dry-run） |
+| `selftest [--deep]` | 自检：依赖 / 凭证 / API / OCR / 转写 / yt-dlp / 缓存 / 磁盘 |
 
 > `grid` / `subs` / `refine` / `grab` 都要求 `cache/<BV>.mp4` 已存在——第一次用请先跑 `auto`（它会下载）。
 
@@ -226,6 +232,12 @@ node fisheye.mjs transcribe BV1xxx [--lang zh]
 模型放 `~/.dsh/surfcore/whisper/`（`ggml-*.bin`）或用 `FISHEYE_WHISPER_MODEL` 指定。
 转写文本落 `out/<BV>-audio-transcript.txt`。
 
+### 字幕翻译
+
+外文视频（英文/日文等）的官方字幕会同时读取 B站 的**中文翻译轨**（l2 机器翻译），
+转写结果旁会打印翻译行数，翻译文本落盘 `out/<BV>-official-subs-translated.txt`。
+没有翻译轨的视频不会凭空翻译（不接外部翻译 API）。
+
 ## OCR（图片文字识别）
 
 装了 tesseract 后可以识别图片/画面里的文字：
@@ -247,12 +259,83 @@ node fisheye.mjs url "https://www.youtube.com/watch?v=xxx"
 
 下载（yt-dlp）→ 自动走本地视频抽帧流程。探测顺序：`FISHEYE_YTDLP` → PATH → 常见安装路径。
 
+## 批量处理
+
+一次处理多个视频（每行一个 BV / 本地路径 / URL，支持 `#` 注释）：
+
+```bash
+# 从清单文件
+node fisheye.mjs batch list.txt --concurrency 2
+
+# 直接传条目
+node fisheye.mjs batch BV1xxx BV2xxx "C:\videos\a.mp4"
+
+# 并发处理（默认 1 串行；失败不中断，最后汇总）
+node fisheye.mjs batch list.txt --concurrency 3
+```
+
+每一项按类型自动分派：BV → auto、路径 → local、链接 → url。
+
 ## 清理
 
 ```bash
 node fisheye.mjs clean                    # 预览将清理的缓存/产物（dry-run）
 node fisheye.mjs clean --target out --yes # 实际删除 out/
 ```
+
+## MCP server（可选）
+
+`mcp-video-server.js` 把 fisheye 包装成 [MCP](https://modelcontextprotocol.io/)（Model Context Protocol）工具，让支持 MCP 的 agent 环境（DSH / Claude Code / Cursor 等）**不必自己拼命令行**就能看视频。
+
+这是**可选组件**：fisheye 核心保持零依赖，不装下面两个 npm 包也能正常用 `auto` / `local` 等命令。
+
+### 安装
+
+```bash
+# 在 fisheye 目录（含 fisheye.mjs 的那层）里执行，会生成 node_modules/
+npm i @modelcontextprotocol/sdk zod
+```
+
+除此之外还需要同目录的 `fisheye.mjs` + `lib/`、ffmpeg、B站 登录态（见上文「配置 B 站登录态」）。
+`vwatch_deep` 的「独立会话复述」额外需要本机安装 **DeepSeek Harness 桌面版**；没有时会自动降级，直接返回抽帧规划 + 官方字幕原文。
+
+### 配置
+
+把 server 注册到 MCP 客户端（Claude Code 写进项目根的 `.mcp.json`；DSH 用同样的 `mcpServers` 结构）：
+
+```json
+{
+  "mcpServers": {
+    "fisheye": {
+      "command": "node",
+      "args": ["C:/path/to/fisheye/mcp-video-server.js"]
+    }
+  }
+}
+```
+
+Windows 路径用正斜杠或双反斜杠。若用 `FISHEYE_HOME` 挪过数据目录，在 `env` 里一并传入：
+
+```json
+{
+  "mcpServers": {
+    "fisheye": {
+      "command": "node",
+      "args": ["C:/path/to/fisheye/mcp-video-server.js"],
+      "env": { "FISHEYE_HOME": "D:/video-cache" }
+    }
+  }
+}
+```
+
+### 工具
+
+| 工具 | 作用 | 参数 |
+|---|---|---|
+| `vwatch_scan` | 快速扫一眼：对开头一段抽帧拼成九宫格，**直接返回画面**（不含文字总结） | `bvid`、`grid`（`3x3` / `4x4` / `5x5`） |
+| `vwatch_deep` | 深入看懂：按 token 预算抽帧 + 优先官方字幕 → 交给独立 headless 会话读完 → **只返回完整复述**（不占当前对话上下文） | `bvid`、`from`、`to`、`page`、`budget` |
+
+> 工具名沿用旧名 `vwatch_*`，以免破坏已有的 MCP 配置。参数与 CLI 一一对应：`bvid` → BV 号，`from`/`to` → `--from`/`--to`，`page` → `--p`，`budget` → `--budget`。
 
 ## 它怎么工作
 
