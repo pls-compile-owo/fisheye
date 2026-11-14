@@ -65,6 +65,10 @@ node fisheye.mjs grab BV1xxx 69.6,75.3
 The CLI prints `SHEET: <path>` — feed that image to your multimodal model via
 `read_image`. (Optional: wrap the CLI in an MCP server if your agent environment supports it.)
 
+## Ad detection
+
+Ad segments are detected with six heuristics: danmaku density dips, keyword clustering, head-ad signals, purchase-signal backtracking, **digit marks** (viewers type the ad end time, e.g. "1407" = 14:07), and subtitle keywords. Calibrated on 8 hand-labeled videos (7 with ads all hit, 5 without ads zero false positives) — see `test/golden/ad-truth/`.
+
 ## More commands
 
 ```bash
