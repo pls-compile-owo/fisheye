@@ -435,6 +435,9 @@ Copyright (c) 2026 Derpyu520 and qq-bridge / QSH contributors）。
 |---|---|---|
 | [ffmpeg](https://ffmpeg.org/) | 抽帧、拼图、字幕带切片 | LGPL/GPL |
 | [numpy](https://numpy.org/) · [Pillow](https://python-pillow.org/) | 字幕带位置检测（可选） | BSD / MIT-CMU |
+| [whisper.cpp](https://github.com/ggml-org/whisper.cpp) | 音频转写（可选，`transcribe` / `--audio`） | MIT |
+| [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) | 图片文字识别（可选，`ocr`） | Apache-2.0 |
+| [yt-dlp](https://github.com/yt-dlp/yt-dlp) | 任意平台视频下载（可选，`url`） | Unlicense |
 
 ### 思想来源
 

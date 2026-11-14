@@ -102,6 +102,9 @@ Third-party dependencies:
 |---|---|---|
 | [ffmpeg](https://ffmpeg.org/) | frame extraction, tiling, subtitle-band slicing | LGPL/GPL |
 | [numpy](https://numpy.org/) · [Pillow](https://python-pillow.org/) | subtitle-band detection (optional) | BSD / MIT-CMU |
+| [whisper.cpp](https://github.com/ggml-org/whisper.cpp) | audio transcription (optional) | MIT |
+| [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) | OCR (optional) | Apache-2.0 |
+| [yt-dlp](https://github.com/yt-dlp/yt-dlp) | any-platform video download (optional) | Unlicense |
 
 ## License
 
