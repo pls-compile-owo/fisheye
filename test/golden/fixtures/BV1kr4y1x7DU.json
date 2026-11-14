@@ -5,7 +5,7 @@
   "hasOfficialSubs": false,
   "expectedQuality": null,
   "subtitleLines": [],
-  "expectedAdSegments": 3,
+  "expectedAdSegments": 0,
   "danmaku": [
     {
       "t": 79.295,
@@ -516,5 +516,6 @@
       "text": "好想把灯打开"
     }
   ],
-  "danmakuCount": 127
+  "danmakuCount": 127,
+  "groundTruthNote": "2026-11-14 人工确认：04:50-05:50 / 08:50-10:40 / 11:40-13:00 三段均非广告（艺术短片，无赞助），修复稀疏弹幕误报后应检测为 0 段"
 }
