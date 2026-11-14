@@ -1,6 +1,6 @@
 {
   "name": "@pls-compile-owo/fisheye",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "description": "Token-budget-aware video understanding for AI agents: official subtitles -> burned-in subtitle band -> danmaku highlights -> adaptive keyframe grids -> targeted refine.",
   "type": "module",
   "bin": {

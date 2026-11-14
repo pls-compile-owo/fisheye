@@ -2,6 +2,16 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.7.2] - 2026-11-14
+
+### Docs
+
+纯文档同步版本（功能与 0.7.1 完全一致，无需重新安装）。
+
+- README 补全：批量处理、字幕翻译、MCP server、OCR、任意平台视频、清理、断点续跑等 0.5～0.7 新增功能的文档。
+- 第三方依赖致谢补充 whisper.cpp / Tesseract / yt-dlp。
+- 英文 README 补充 More commands 段。
+
 ## [0.7.1] - 2026-11-14
 
 ### Added
