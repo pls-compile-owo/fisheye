@@ -1,0 +1,27 @@
+{
+  "bvid": "BV1Cc411Q78T",
+  "title": "起床，老婆，亲亲，三连【返场真喵真事】",
+  "duration": 30,
+  "hasOfficialSubs": true,
+  "expectedQuality": "ok",
+  "subtitleLines": [
+    "♪ 我想睡到自然醒 ♪",
+    "♪ 换到今天星期几 ♪",
+    "♪ 忘掉所有烦恼和无聊的问题 ♪",
+    "♪ 写着那首的厨艺 ♪",
+    "♪ 想你 ♪",
+    "♪ 忙碌了自己在追半个地燃烧我的卡路里 ♪"
+  ],
+  "expectedAdSegments": 0,
+  "danmaku": [
+    {
+      "t": 0,
+      "text": "猫界周棋洛doge"
+    },
+    {
+      "t": 3.431,
+      "text": "死亡音乐"
+    }
+  ],
+  "danmakuCount": 2
+}

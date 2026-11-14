@@ -2,6 +2,13 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.8.1] - 2026-11-14
+
+### Added
+
+- **golden case 验收集**（`test/golden/`）：4 条真实 B站 视频（含字幕/无字幕/高密度弹幕/利马定格片）的字幕与弹幕样本落盘为 fixture，离线验证字幕质量判定、广告段检测、取帧计划的输出与真实回放一致。
+- 字幕质量判定提取为纯函数 `assessSubtitleQuality`（bili.mjs），供单测与 golden 用。
+
 ## [0.8.0] - 2026-11-14
 
 ### Changed

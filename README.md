@@ -405,7 +405,7 @@ B 站的弹幕密度本身就是内容信号。实测一条 40 分钟视频：�
 ## 开发
 
 ```bash
-node --test test/                # 单元测试（全部模块：46 个用例）
+node --test test/                # 单元测试 + golden 验收集（真实视频样本，离线可跑）
 node test-danmaku-filter.js      # 弹幕过滤规则测试（51 条用例）
 node fisheye.mjs selftest --deep # 含抽帧/字幕带实测的自检
 ```
