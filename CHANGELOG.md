@@ -2,6 +2,16 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.9.1] - 2026-11-14
+
+### Changed
+
+- **planner / executor 拆分**（重构，行为不变）：
+  - `lib/planner.mjs`：纯函数规划器（密度阶梯 / 张数 / 预算钳制 / 成本估算），不碰 IO。
+  - `lib/executor.mjs`：几何挑点 + 精读建议（纯数据），`MIN_READABLE_SUBS_PX` 一并移入。
+  - `stageAuto` 只做编排：采集信号 → planAuto 决策 → stageGrid/stageSubs 执行。
+  - 新增 14 个单测（planner 8 + executor 6），行为与重构前逐行一致（真实 auto 输出对比仅路径差异）。
+
 ## [0.9.0] - 2026-11-14
 
 ### Added
