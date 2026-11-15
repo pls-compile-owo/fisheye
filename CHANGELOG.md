@@ -2,6 +2,12 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.9.3] - 2026-11-15
+
+### Fixed
+
+- **`grid` 命令在发布包中不可用**：`fisheye.mjs` 的 util 导入漏了 `gridStr`，发布版运行 `grid` 报 `gridStr is not defined`。0.5.0 起发布版一直存在此问题（本地开发版已手动补过但发布物缺），本次修复。感谢用户反馈。
+
 ## [0.9.2] - 2026-11-14
 
 ### Fixed（外部评审问题修复）

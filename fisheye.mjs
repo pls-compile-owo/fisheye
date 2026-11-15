@@ -18,7 +18,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { PKG_DIR, WS, CFG_FILE, FFMPEG, CRED } from './lib/env.mjs'
-import { parseTime, num, pageNum } from './lib/util.mjs'
+import { parseTime, num, pageNum, gridStr } from './lib/util.mjs'
 import { t } from './lib/i18n.mjs'
 import { stageAuto, stageGrid, stageSubs, stageSelftest, stageRefine, stageGrab, stageLocal, stageTranscribe, stageClean, stageOcr, stageUrl, stageBatch } from './lib/stages.mjs'
 
