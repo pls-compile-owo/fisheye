@@ -358,6 +358,34 @@ Windows 路径用正斜杠或双反斜杠。若用 `FISHEYE_HOME` 挪过数据�
 
 > 工具名沿用旧名 `vwatch_*`，以免破坏已有的 MCP 配置。参数与 CLI 一一对应：`bvid` → BV 号，`from`/`to` → `--from`/`--to`，`page` → `--p`，`budget` → `--budget`。
 
+## WorkBuddy（腾讯桌面智能体）
+
+[WorkBuddy](https://www.codebuddy.cn/docs/workbuddy/) 是腾讯的 AI 桌面智能体工作台，内置 MCP 协议支持，可以直接接入 fisheye 的 MCP server：
+
+```bash
+# 1. 在 fisheye 目录装 MCP 依赖（可选组件，核心 CLI 零依赖）
+npm i @modelcontextprotocol/sdk zod
+```
+
+2. 在 WorkBuddy 的 `mcp.json` 里注册（结构同 Claude Code）：
+
+```json
+{
+  "mcpServers": {
+    "fisheye": {
+      "command": "node",
+      "args": ["C:/path/to/fisheye/mcp-video-server.js"]
+    }
+  }
+}
+```
+
+3. 重启 WorkBuddy，会话里会出现 `vwatch_scan` / `vwatch_deep` 两个工具（工具名沿用旧名兼容）。
+
+**注意**：
+- `vwatch_deep` 会启动独立的 DeepSeek Harness 桌面会话复述视频，在 WorkBuddy 里没有 DSH 桌面版时无法使用——建议 WorkBuddy 里只用 `vwatch_scan`，深读改用 CLI。
+- 不想配 MCP 也可以：WorkBuddy 能执行本地命令，直接让它跑 `node fisheye.mjs auto <BV> --budget 20000` 即可。
+
 ## 它怎么工作
 
 ```

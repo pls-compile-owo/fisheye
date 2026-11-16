@@ -83,6 +83,10 @@ node fisheye.mjs clean [--target out] [--yes]     # clean artifacts
 `auto --resume` reuses existing grids and skips frame extraction; `--force` re-runs everything.
 Optional integrations: whisper.cpp (audio), tesseract (OCR), yt-dlp (any URL), and `mcp-video-server.js` (MCP tools, needs `npm i @modelcontextprotocol/sdk zod`).
 
+## WorkBuddy (Tencent desktop agent)
+
+WorkBuddy supports MCP — register `mcp-video-server.js` in its `mcp.json` (same `mcpServers` shape as Claude Code) after `npm i @modelcontextprotocol/sdk zod`. Tools appear as `vwatch_scan` / `vwatch_deep`. `vwatch_deep` needs the DSH desktop app for its independent-session recap; otherwise use the CLI directly: `node fisheye.mjs auto <BV>`.
+
 ## Self-check
 
 ```bash
