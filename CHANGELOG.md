@@ -2,6 +2,12 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.9.4] - 2026-11-16
+
+### Docs
+
+- README 新增「WorkBuddy（腾讯桌面智能体）」接入说明：MCP 注册方式、依赖前提、工具名注意点、CLI 替代方案；英文 README 同步简版。
+
 ## [0.9.3] - 2026-11-15
 
 ### Fixed
