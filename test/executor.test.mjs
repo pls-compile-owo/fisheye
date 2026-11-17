@@ -72,3 +72,29 @@ test('buildSuggestions：无热区时只返回几何点', () => {
 test('MIN_READABLE_SUBS_PX 导出为 12', () => {
   assert.equal(MIN_READABLE_SUBS_PX, 12)
 })
+
+// 字幕糊分支：拼图里字幕像素低于 12px 且字幕未被覆盖 → 该帧值得精读（核心价值分支）
+test('geometricPick：字幕在拼图里糊掉且未被覆盖时，建议精读', () => {
+  // sheetWidth 小 → cellW≈93px → scale≈0.0485 → 字幕高度 0.22*1080*0.0485 ≈ 11.5px < 12px
+  const manifest = makeManifest({
+    videoWidth: 1920,
+    videoHeight: 1080,
+    sheetWidth: 280,
+    subs: { top: 0.78, bottom: 1.0 },
+    subsCovered: false,
+  })
+  const picks = geometricPick(manifest)
+  assert.ok(picks.some((p) => p.reason.includes('字幕在拼图里只剩')), '应给出字幕糊的精读理由')
+})
+
+test('geometricPick：字幕已覆盖（官方文本/转写）时，不为字幕糊建议精读', () => {
+  const manifest = makeManifest({
+    videoWidth: 1920,
+    videoHeight: 1080,
+    sheetWidth: 280,
+    subs: { top: 0.78, bottom: 1.0 },
+    subsCovered: true,   // 字幕已到手，不必为糊掉的字幕花原图成本
+  })
+  const picks = geometricPick(manifest)
+  assert.ok(!picks.some((p) => p.reason.includes('字幕在拼图里只剩')), '字幕已覆盖时不应有字幕糊理由')
+})
