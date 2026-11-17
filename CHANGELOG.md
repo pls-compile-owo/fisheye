@@ -2,6 +2,18 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.0.2] - 2026-11-17
+
+### Changed（编排层解耦 + 测试）
+
+- **抽 `lib/collect.mjs`（采集层）**：stageAuto 里的下载/元信息/场景/字幕(官方/转写/字幕带)/弹幕/广告/语义采集抽成 `collectSignals(source, opts)`，返回纯数据 ctx；stageAuto 只剩「采集 → planner 决策 → stageGrid 执行 → executor 建议 → 输出」。广告分发 `detectAds` 一并移入。
+- **抽 `lib/selftest.mjs`**：stageSelftest（180 行）从 stages.mjs 独立；stages.mjs 保留 re-export 兼容。
+- **新增编排层测试** `test/orchestration.test.mjs`（9 用例）：mock 平台 source + 临时假视频，覆盖 collectSignals 契约、官方字幕/质量差分支、range 校验、detectAds 分发——补上编排层此前零覆盖的短板。
+
+### Tests
+
+- 全量 174 用例（171 通过 + 3 跳过），0 失败。
+
 ## [1.0.1] - 2026-11-17
 
 ### Fixed（macOS 安装复盘）
