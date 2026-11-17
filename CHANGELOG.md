@@ -2,6 +2,13 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.0.6] - 2026-11-18
+
+### Added
+
+- **DSH 插件 `@pls-compile-owo/dsh-fisheye`**（本仓库 `dsh-plugin/`）：把 fisheye 注册成 agent 的 `video_understand` 工具，返回拼图/字幕/弹幕证据，供模型或下游插件消费。已发布 npm，可被 DSH 插件目录站收录。
+- README 中英版新增「DSH 插件」安装节。
+
 ## [1.0.5] - 2026-11-18
 
 ### Docs

@@ -1,0 +1,37 @@
+{
+  "name": "@pls-compile-owo/dsh-fisheye",
+  "version": "0.1.0",
+  "description": "Video understanding tool for DSH agents, backed by the fisheye CLI (token-budget frame grids, subtitles, danmaku, close-ups).",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "docs",
+    "icon.svg",
+    "README.md"
+  ],
+  "keywords": [
+    "dsh-plugin",
+    "dsh-bundle",
+    "video-understanding",
+    "tokencut",
+    "fisheye",
+    "bilibili"
+  ],
+  "peerDependencies": {
+    "@deepseek-ai/dsh-tools": "*"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "license": "MIT"
+}

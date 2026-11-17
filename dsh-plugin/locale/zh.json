@@ -1,0 +1,7 @@
+{
+  "meta": {
+    "title": "fisheye 视频阅读器",
+    "description": "注册 video_understand 工具：通过 fisheye CLI 按 token 预算阅读 B 站视频、本地文件或任意链接——官方字幕优先、自适应九宫格抽帧、关键帧再精读，返回拼图路径与字幕/弹幕要点，供视觉模型或下游插件消费。",
+    "detail": "docs/DETAIL.md"
+  }
+}

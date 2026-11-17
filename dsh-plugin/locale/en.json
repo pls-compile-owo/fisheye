@@ -1,0 +1,7 @@
+{
+  "meta": {
+    "title": "fisheye video reader",
+    "description": "Adds a video_understand tool that reads Bilibili, local files or URLs through the fisheye CLI on a token budget: official subtitles first, adaptive keyframe grids, close-ups only when needed. Returns grid paths and subtitle/danmaku notes for a vision model or downstream plugins.",
+    "detail": "docs/DETAIL.md"
+  }
+}

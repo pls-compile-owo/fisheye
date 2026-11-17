@@ -62,6 +62,16 @@ pip3 install -r semantic/requirements.txt           # optional (semantic)
 
 Subtitle-band detection needs `numpy` + `Pillow` on the **same python3 fisheye invokes** (`python3 -c "import numpy, PIL"`). Prefer `npm i -g` over unzipping a Windows-made zip (backslash paths break on macOS).
 
+## DSH plugin (optional)
+
+For DeepSeek Harness users, the plugin version registers fisheye as a `video_understand` agent tool:
+
+```bash
+dsh plugin --profile web add @pls-compile-owo/dsh-fisheye
+```
+
+You can also install the `dsh-plugin/` directory in this repo locally (Plugins → Add plugin → select the directory). The plugin only *reads* videos and returns grid/subtitle evidence; summaries belong to the calling model or a downstream plugin.
+
 ## Install
 
 Requirements: Node.js 18+, ffmpeg.

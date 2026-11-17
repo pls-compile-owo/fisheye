@@ -91,6 +91,16 @@ python3 -c "import numpy, PIL"   # 自检会用同一解释器验证，缺依赖
 
 **解压**：Windows 打的 zip 在 macOS 上可能解出反斜杠命名的坏文件。推荐直接 `npm i -g @pls-compile-owo/fisheye`，或下载 `npm pack` 生成的 `.tgz`（POSIX 路径安全）。
 
+## DSH 插件（可选）
+
+DSH（DeepSeek Harness）用户可以直接安装插件版，把 fisheye 注册成 agent 的 `video_understand` 工具：
+
+```bash
+dsh plugin --profile web add @pls-compile-owo/dsh-fisheye
+```
+
+也可以本地安装本仓库的 `dsh-plugin/` 目录（插件 → 添加插件 → 选目录）。插件只负责"看视频"，产出拼图/字幕/弹幕证据，摘要交给调用方模型或下游插件。
+
 ## 安装
 
 **前置**：Node.js 18+、ffmpeg
