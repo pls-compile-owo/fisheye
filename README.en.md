@@ -14,6 +14,8 @@ node fisheye.mjs auto https://... --budget 20000     # any URL (yt-dlp)
 
 One `auto` command handles every platform: it auto-detects the input type and routes to the matching adapter.
 
+![fisheye demo](docs/demo-en.gif)
+
 ## Why
 
 Naive sampling ("1 frame per second") explodes token cost:

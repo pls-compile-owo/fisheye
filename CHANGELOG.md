@@ -2,6 +2,13 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.0.4] - 2026-11-17
+
+### Docs
+
+- 新增演示 GIF（`docs/demo-en.gif` 英文 / `docs/demo-zh.gif` 中文），展示「输入视频 → 规划抽帧 → 3x3 拼图 → AI 摘要」全流程；README 中英版顶部引用。
+- 生成脚本随包：`docs/make-demo-gif-en.py` / `docs/make-demo-gif.py`。
+
 ## [1.0.3] - 2026-11-17
 
 ### Tests

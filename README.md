@@ -16,6 +16,8 @@ node fisheye.mjs auto https://... --budget 20000     # 任意 URL（yt-dlp）
 
 ---
 
+![fisheye 演示](docs/demo-zh.gif)
+
 ## 为什么
 
 给 AI 看视频最朴素的做法是「1 秒 1 帧」：
