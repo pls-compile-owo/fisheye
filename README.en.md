@@ -4,7 +4,7 @@
 
 > Let AI agents *see* videos on a token budget — **tokencut** the token cost of video understanding, instead of grabbing one frame every 10 seconds.
 
-A CLI tool that **understands a video within a given token budget** — whether it's from Bilibili, a local file, or any URL.
+A CLI that **understands a video within a token budget** — whether it's from Bilibili, a local file, or any URL.
 
 ```bash
 node fisheye.mjs auto BV1xxx --budget 20000          # Bilibili
@@ -14,44 +14,48 @@ node fisheye.mjs auto https://... --budget 20000     # any URL (yt-dlp)
 
 One `auto` command handles every platform: it auto-detects the input type and routes to the matching adapter.
 
+---
+
 ![fisheye demo](docs/demo-en.gif)
 
 ## Why
 
-Naive sampling ("1 frame per second") explodes token cost:
+The naive way to let an AI watch a video is 1 frame per second:
 
-| Approach | 1-min video | 40-min video |
+| Approach | 1-minute video | 40-minute video |
 |---|---|---|
 | 1 fps sampling | ~60 frames ≈ **15k tokens** | ~2400 frames ≈ **600k tokens** (over context) |
 | fisheye | 1–2 grids (9–18 frames) ≈ **3–6k tokens** | 12 grids ≈ **30k tokens** |
 
-The difference is not "sampling less" — it's **sampling the right moments and choosing the cheapest channel**.
+The difference is not sampling less — it's sampling **the right moments**, with the cheapest source that works.
 
-## Design: five information channels
+## Core idea: multiple information sources
 
-| Priority | Channel | Cost | When |
+Not everything needs to be read as images. Sources are ranked by information per token:
+
+| Priority | Source | Cost | When |
 |---|---|---|---|
-| ① | Official subtitles | a few hundred tokens | video has a CC/AI subtitle track |
-| ② | Burned-in subtitle band | ~1k tokens | no subtitle track, subtitles baked into frames |
-| ③ | Danmaku hotspots (Bilibili) | ~100 tokens | find where viewers reacted (invisible to pixels/subtitles) |
-| ④ | Keyframe grids (3×3) | 1.2k–3.8k tokens/grid | fallback: when pixels are actually needed |
-| ⑤ | Semantic shift points | zero token | detect where the video switches topic (feeds refine suggestions) |
+| ① | **Official subtitles** (CC track) | hundreds – thousands of tokens | when the video has subtitles |
+| ② | **Burnt-in subtitle band** | ~1000 tokens | no official subtitles, but text on screen |
+| ③ | **Danmaku highlights** (Bilibili) | ~100 tokens | audience reaction — invisible to frames and subtitles |
+| ④ | **Frame grids** (3×3) | 1200–3800 tokens/grid | fallback: when pixels actually matter |
+| ⑤ | **Semantic shifts** (optional) | zero tokens | where the topic changes, feeding refine suggestions |
 
-Then refine only a few key moments at original resolution.
+Then a few key moments get a **close-up** at full resolution — the only place we spend big.
 
-## Platform adapters
+## Install
 
-The core knows nothing about any specific platform. Each platform is an **adapter** implementing one contract (`meta` / `media` / `subtitles` / `danmaku` / `adDetector`):
+**Requires**: Node.js 18+, ffmpeg
 
-| Adapter | Input | Capabilities |
-|---|---|---|
-| `bilibili` | BV id | official subs + danmaku + download + ad detection (danmaku signals) |
-| `local` | file path | direct frame extraction; subs via transcription / burned-in band fallback |
-| `url` | http(s) link | yt-dlp download; otherwise same as local |
+**Optional**: Python 3.9+ with `numpy` + `Pillow` (subtitle-band detection); whisper.cpp; tesseract; yt-dlp
 
-Adding a platform = copy `lib/platforms/_template/` + add one import to the registry. **Static registration + directory convention** (not hot-plug): fisheye is a local CLI, platforms ship built-in.
+```bash
+npm i -g @pls-compile-owo/fisheye
+# or from source:
+git clone https://github.com/pls-compile-owo/fisheye && cd fisheye && npm link
+```
 
-## macOS Install
+### macOS
 
 ```bash
 brew install node ffmpeg python3
@@ -60,124 +64,293 @@ pip3 install --user yt-dlp                          # optional
 pip3 install -r semantic/requirements.txt           # optional (semantic)
 ```
 
-Subtitle-band detection needs `numpy` + `Pillow` on the **same python3 fisheye invokes** (`python3 -c "import numpy, PIL"`). Prefer `npm i -g` over unzipping a Windows-made zip (backslash paths break on macOS).
+Subtitle-band detection needs `numpy` + `Pillow` on the **same python3 fisheye invokes**:
+
+```bash
+python3 -c "import numpy, PIL"   # selftest verifies with the same interpreter
+```
+
+Prefer `npm i -g` over unzipping a Windows-made zip (backslash paths break on macOS).
+
+### Bilibili credentials (only for Bilibili)
+
+Copy `credentials.example.json` to `credentials.json` and fill in `sessdata`, `bili_jct`, `buvid3` from your browser cookies. This file is gitignored — **never commit it**. Local files and URLs need no login.
+
+### Environment variables
+
+| Variable | Meaning |
+|---|---|
+| `FISHEYE_LANG` | CLI language: `zh` (default) / `en` |
+| `FISHEYE_TOKENS_PER_GRID` / `_SUBS` / `_FINE` | token estimates per grid / subtitle band / close-up (default 1200 / 1000 / 1300) |
+| `FISHEYE_TOKEN_MODEL` | tokenizer correction: `gpt` 1.0 / `qwen` 1.35 / `gemini` 0.8 / number |
+| `FISHEYE_WHISPER` / `FISHEYE_WHISPER_MODEL` | whisper binary / model (optional) |
+| `FISHEYE_HOME` | data directory (cache/out) |
+| `SEMANTIC_CLI` / `SEMANTIC_PYTHON` | external semantic CLI / interpreter (default: bundled `semantic/cli.py`) |
+| `FFMPEG` / `PYTHON` / `BILI_CRED` | tool and credential path overrides |
+
+Lookup order for tools: env var → `~/.config/fisheye/config.json` → project `bin/` / `credentials.json` → PATH.
+
+## Quick start
+
+```bash
+node fisheye.mjs selftest                              # 1. check deps/credentials/APIs
+node fisheye.mjs auto BV1ziWP6qENy --budget 20000      # 2. plan and lay out the grids
+node fisheye.mjs refine BV1ziWP6qENy                   # 3. pick moments worth a close-up
+node fisheye.mjs grab BV1ziWP6qENy 82.5,145.0          # 4. grab full-res frames
+```
+
+Common flags: `--budget`, `--from`/`--to`, `--density`, `--p`, `--no-audio`, `--no-danmaku-frames`.
+
+## Output
+
+| File | Content |
+|---|---|
+| `<id>-cNN_start-end_3x3.jpg` | frame grid (cells ordered by time) |
+| `<id>-subs_N.jpg` | subtitle band (subtitle region only) |
+| `<id>-official-subs.txt` | official subtitles with timestamps (+ `-plain.txt`) |
+| `<id>-official-subs-translated.txt` | official translation track when available |
+| `<id>-manifest.json` | structured index: grid ranges, per-cell timestamps, change scores, danmaku hotspots, ad segments, `semanticShifts` |
+
+`<id>` is stable and filename-safe: BV id for Bilibili, basename for local files, normalized-URL hash for URLs.
+
+The CLI prints a planning report explaining every decision (numbers below are from different videos, format only):
+
+```
+[ratio] 1080x1920 → grid 1920x3414, ~3793 tokens per grid
+[content] 14 strong changes, rate 0.13/s
+[subs] no usable official subtitles; burnt-in band detected (82%-90%, confidence 0.63) → 1 band image
+[semantic] 3 topic shifts
+[ad] 1 low-density segment: 04:40-06:40 (120s), 34% below average, keyword "thanks sponsor"
+[danmaku] 335 comments, peaks: 01:25 (34 comments)
+[density] target ≤13s/frame (derived from rate)
+[grids] density needs 1, budget allows 4 → using 1
+[grid 1/1] 00:00-01:49, 9 frames → BVxxx-c00_0000-0109_3x3.jpg
+[refine] 2 moments (geometry 1 + danmaku 1)
+```
+
+## Commands
+
+| Command | Purpose |
+|---|---|
+| `auto <BV\|file\|URL>` | recommended entry: detect platform, plan, lay out grids |
+| `grid <BV>` | grids only (`--chunk`, `--grid`) |
+| `subs <BV>` | subtitle band only (`--count`, `--band`) |
+| `refine <BV>` | pick close-up moments and grab them (template / decisions / geometric fallback) |
+| `grab <BV> <t1,t2>` | grab full-res frames at given times |
+| `local <file>` | local shortcut for `auto <file>` |
+| `transcribe <BV>` | whisper transcription |
+| `ocr <image>` | tesseract OCR |
+| `url <url>` | URL shortcut for `auto <url>` |
+| `batch <list\|items...>` | batch processing (`--concurrency N`) |
+| `clean [--target cache\|out\|all] [--yes]` | clean cache/output (dry-run by default) |
+| `selftest [--deep]` | dependency/adapter/API/optional-component checks |
+
+## Platform adapters
+
+The core knows no platform. Each platform is an adapter following one contract (`meta` / `media` / `subtitles` / `danmaku` / `adDetector`):
+
+| Adapter | Input | Capabilities |
+|---|---|---|
+| `bilibili` | BV id | official subtitles + danmaku + download + danmaku-based ad detection |
+| `local` | file path | frames directly; subtitles via transcription / burnt-in band |
+| `url` | http(s) link | yt-dlp download, then like local |
+
+Adding a platform = copy `lib/platforms/_template/` and add one import to the registry. No core changes.
+
+## Tuning and extension points
+
+### Ad detection (per platform)
+
+Each adapter ships an `adDetector` with three levels:
+
+**① keywords only** (most common): platform slang and purchase signals.
+
+```js
+adDetector: { keywords: ['1407 工程启动', 'recently ordered', 'shop', 'fish oil'] }
+```
+
+**② choose signals** — six built-in detectors:
+
+| Signal | Meaning |
+|---|---|
+| `density` | danmaku density dip (viewers skip ads) |
+| `keyword-cluster` | ad keywords clustered |
+| `head-ad` | intro/spoken ad |
+| `buy-backtrack` | purchase-talk backtracking |
+| `digit-mark` | digit marks ("1407" = ad ends at 14:07) |
+| `sub-keywords` | purchase words in subtitles/transcript |
+
+```js
+adDetector: { signals: ['density', 'digit-mark', 'sub-keywords'] }
+```
+
+**③ custom detect function**:
+
+```js
+adDetector: {
+  detect: async ({ danmaku, duration, subtitles }) => [
+    { from: 343, to: 430, confidence: 'high', reasons: ['fish-oil ad'] },
+  ],
+}
+```
+
+Tuning: label 2–3 real videos first, then adjust. Too many false positives → raise the confidence bar or drop weak signals; too many misses → add platform-specific words (digit marks work best).
+
+### Danmaku filtering
+
+`danmaku-filter.mjs` drops ad-link spam and noise using keyword tables (`AD_PATTERNS` / `NOISE_PATTERNS`) — edit them for your platform's slang. Rules have their own test: `node test-danmaku-filter.js` (51 cases). `--no-danmaku-frames` keeps danmaku for hotspots/ads only.
+
+### Budget model
+
+| Constant | Default | Meaning |
+|---|---|---|
+| `FISHEYE_TOKENS_PER_GRID` | 1200 | one 3×3 grid |
+| `FISHEYE_TOKENS_PER_SUBS` | 1000 | one subtitle band |
+| `FISHEYE_TOKENS_PER_FINE` | 1300 | one close-up |
+| `FISHEYE_TOKEN_MODEL` | 1.0 | model factor (`gpt` 1.0 / `qwen` 1.35 / `gemini` 0.8 / custom) |
+
+Grid cost is corrected by frame area (portrait ≈ 3× landscape), so portrait videos hit the budget cap sooner.
+
+### Frame density
+
+Default: derived from content change rate (0.05–2/s → 4/6/9/13 s per frame). `--density N` forces N seconds per frame. Hard cap `MAX_GRIDS = 12`. Under budget pressure it degrades and says so in the log.
+
+### Semantic segmentation (bring your own model)
+
+The semantic step is an external CLI that can be replaced entirely:
+
+```bash
+SEMANTIC_CLI=/path/to/my-semantic-cli.py SEMANTIC_PYTHON=/path/to/python fisheye auto BV1xxx
+```
+
+Contract (see the header of `semantic/cli.py`):
+
+```
+input:  JSON file [{ "t": seconds, "text": "line" }, ...]
+call:   python cli.py <input.json> [--n-bkps 5]
+output: stdout JSON { "segments": [{ "t": s, "confidence": 0..1, "signals": [...] }],
+                      "suggestions": [{ "t": s, "reason": "...", "confidence": 0..1, "source": "...", "kind": "..." }] }
+```
+
+The bundled reference implementation uses `fastembed` (bge-small-zh) + `ruptures` for embedding-based change-point detection — zero tokens, CPU-only. Enabled automatically when dependencies exist; silently skipped otherwise.
+
+### Close-up thresholds
+
+- `MIN_READABLE_SUBS_PX = 12`: subtitles smaller than 12px in a grid are "unreadable" → suggest a close-up
+- At most 8 close-up points, ranked by change strength / danmaku heat
+- No subtitle close-up suggestions when subtitles are already covered (official track / transcript)
+
+## Resume
+
+```bash
+node fisheye.mjs auto BV1xxx --budget 20000 --resume   # reuse completed frame extraction
+node fisheye.mjs auto BV1xxx --budget 20000 --force    # rerun everything
+```
+
+Manifests carry a `version` field; older artifacts stay compatible, newer ones produce an explicit "please upgrade fisheye" instead of a silent mis-parse.
+
+## Optional capabilities
+
+- **Local video**: `auto <file> [--grid 3x3] [--from 30] [--to 90]` — no login required.
+- **Audio transcription**: `transcribe BV1xxx --lang zh` (whisper.cpp, `FISHEYE_WHISPER_MODEL`).
+- **OCR**: `ocr screenshot.png [--lang chi_sim+eng]` (tesseract).
+- **Any URL**: `auto "https://..."` via yt-dlp.
+- **Batch**: `batch list.txt --concurrency 2`, failures don't stop the run.
+- **Clean**: `clean --target out --yes`.
+
+## selftest
+
+```bash
+node fisheye.mjs selftest        # deps / adapters / APIs / optional components / disk
+node fisheye.mjs selftest --deep # plus real samples: frames, band, OCR, silence transcription, 3-line semantic split
+```
+
+Marks: `[OK]` pass, `[--]` skipped, `[!!]` failed, with repair hints at the end.
+
+## MCP server (optional)
+
+`mcp-video-server.js` exposes fisheye as MCP tools for MCP-capable agents (DSH / Claude Code / Cursor):
+
+```bash
+npm i @modelcontextprotocol/sdk zod   # inside the fisheye directory
+```
+
+```json
+{ "mcpServers": { "fisheye": { "command": "node", "args": ["C:/path/to/fisheye/mcp-video-server.js"] } } }
+```
+
+| Tool | Purpose |
+|---|---|
+| `vwatch_scan` | quick look: first segment as a 3×3 grid (returns the image) |
+| `vwatch_deep` | deeper read: budgeted frames + official subtitles → independent headless session → summary only |
 
 ## DSH plugin (optional)
 
-For DeepSeek Harness users, the plugin version registers fisheye as a `video_understand` agent tool:
+For DeepSeek Harness, the plugin registers fisheye as the `video_understand` agent tool:
 
 ```bash
 dsh plugin --profile web add @pls-compile-owo/dsh-fisheye
 ```
 
-You can also install the `dsh-plugin/` directory in this repo locally (Plugins → Add plugin → select the directory). The plugin only *reads* videos and returns grid/subtitle evidence; summaries belong to the calling model or a downstream plugin.
+The plugin only *reads* videos (grids, subtitles, danmaku evidence); summaries belong to the calling model or a downstream plugin — good as an upstream preprocessing module for other video plugins.
 
-## Install
+## How it works
 
-Requirements: Node.js 18+, ffmpeg.
-
-```bash
-# Option 1: install from npm (recommended)
-npm i -g @pls-compile-owo/fisheye
-
-# Option 2: from source
-git clone <repo> && cd fisheye
-cp credentials.example.json credentials.json    # fill SESSDATA / bili_jct / buvid3 (Bilibili only)
-node fisheye.mjs selftest --deep
+```
+① resolve input → platform adapter
+② metadata (pages / duration / resolution)
+③ time range (--from/--to)
+④ frame aspect → per-grid token estimate (portrait is ~3× expensive)
+⑤ scene detection (one ffmpeg decode at 320p) → change rate
+⑥ subtitle decision: official > transcript > burnt-in band > pixels only
+⑦ danmaku: hotspots + ad segments (multiple signals)
+⑧ semantic shifts (optional): embeddings + change-point detection
+⑨ density: change rate → target interval (4/6/9/13 s)
+⑩ grid count: density need vs budget cap (hard max 12)
+⑪ layout: even-spaced skeleton + snap to scene changes → grids
+⑫ refine suggestions: scene changes + danmaku peaks + semantic shifts, skipping ad segments
 ```
 
-Bilibili login is only needed for Bilibili videos (some subtitle/playback URLs require cookies). Local files and URLs need no login.
+### Design notes
 
-## Usage
+- **Even spacing + snapping**: pure spacing misses 1–2 second flashes; pure keyframes cluster in intros. The mix keeps coverage and snaps each base point to nearby scene changes.
+- **Why not OCR the subtitle band?** Chinese OCR is unreliable on low-res, styled text. Slicing the band and letting a multimodal model read it is more accurate at similar cost.
+- **Danmaku as a signal**: on a 40-minute video, ad segments had ~31% of average danmaku density; audience peaks were 3–5×. Density is content.
+- **Ads don't occupy frames**: compressing ad segments raises content density (measured: interval 22.1s → 8.3s on one grid).
+- **Semantic without an LLM**: embeddings + change-point detection costs zero tokens; semantic shifts feed refine suggestions as a *structural* signal, not mixed into geometry.
 
-```bash
-# Any platform (auto planning + grids) — Bilibili / local file / URL
-node fisheye.mjs auto BV1xxx --budget 20000 [--density 6] [--from 30] [--to 90] [--p 2]
-node fisheye.mjs auto ./video.mp4 --budget 20000
-node fisheye.mjs auto "https://www.youtube.com/watch?v=xxx" --budget 20000
+## Known limitations
 
-# Manual stages (Bilibili)
-node fisheye.mjs grid BV1xxx --chunk 60 --grid 3x3
-node fisheye.mjs subs BV1xxx --count 14
-node fisheye.mjs refine BV1xxx [--template | --decisions d.json]
-node fisheye.mjs grab BV1xxx 69.6,75.3
-```
+- Capabilities vary by platform: Bilibili has subtitles + danmaku + ad detection; local/URL have no danmaku and rely on subtitle/transcript keywords for ads.
+- Bilibili subtitles/playback URLs may need cookies.
+- Semantic segmentation needs dialogue (subtitles or transcript).
+- Long videos cost real tokens: ~12k tokens for a 40-minute Chinese subtitle track (AI English subtitles can reach ~50k).
+- Bilibili APIs change; `selftest` tells you which piece broke.
 
-The CLI prints `SHEET: <path>` — feed that image to your multimodal model via `read_image`. (Optional: wrap the CLI in an MCP server if your agent environment supports it.)
-
-## More commands
+## Development
 
 ```bash
-node fisheye.mjs local ./video.mp4 [--grid 4x4]   # local video (shortcut for `auto <file>`)
-node fisheye.mjs transcribe BV1xxx [--lang zh]    # audio transcription (whisper.cpp)
-node fisheye.mjs ocr image.png [--lang chi_sim+eng] # OCR text (tesseract)
-node fisheye.mjs url "https://..."                # any platform (shortcut for `auto <url>`)
-node fisheye.mjs batch list.txt --concurrency 2   # process many videos
-node fisheye.mjs clean [--target out] [--yes]     # clean artifacts
+node --test --test-concurrency=1 test/   # unit tests + golden fixtures (offline)
+node test-danmaku-filter.js              # danmaku filter rules (51 cases)
+node fisheye.mjs selftest --deep         # end-to-end self-check
 ```
 
-`auto --resume` reuses existing grids and skips frame extraction; `--force` re-runs everything.
-The manifest carries a `version` field for format validation — old artifacts are auto-compatible, and a too-new format reports "please upgrade fisheye" instead of silently mis-parsing.
+Currently **176 tests** (173 pass + 3 skipped) + **51 danmaku cases**; ad detection has **8 hand-labeled golden videos**.
 
-Optional integrations: whisper.cpp (audio), tesseract (OCR), yt-dlp (any URL), semantic segmentation (see below), and `mcp-video-server.js` (MCP tools, needs `npm i @modelcontextprotocol/sdk zod`).
+Structure: `fisheye.mjs` (CLI), `lib/platforms/` (adapters + template + registry), `lib/collect.mjs` (signal collection), `lib/planner.mjs` / `lib/executor.mjs` (decisions), `lib/stages.mjs` (orchestration), `lib/selftest.mjs`, `dsh-plugin/`, `semantic/cli.py`, `test/`.
 
-## Semantic segmentation (optional)
+More docs: [`docs/DESIGN.md`](docs/DESIGN.md) (decisions and tradeoffs), [`docs/CONFIG.md`](docs/CONFIG.md) (configuration and troubleshooting), [`docs/REVIEW.md`](docs/REVIEW.md) (verification checklist).
 
-fisheye can detect **where a video switches topic** — using subtitle text (official subs preferred) + local embeddings + change-point detection. Zero tokens, CPU-only; it adds the missing third layer beyond "visual change + danmaku change".
+## Compliance
 
-- Auto-enabled when official subtitles exist: `auto` extracts topic-shift points, writes them into the manifest's `semanticShifts`, and feeds them as "structural signals" into refine suggestions (`source: 'semantic'`).
-- Auto-skipped when there's no timestamped dialogue (semantic segmentation needs timestamped lines).
-- Implemented as a standalone Python module (`src/cli.py` + `fastembed` + `ruptures`), called via subprocess. Deployed at a conventional path (override with SEMANTIC_CLI) by default; override with `SEMANTIC_CLI`.
+For personal study and research only: follow each platform's terms, don't scrape in bulk or resell, keep cookies private, and respect video/subtitle copyright.
 
-## Self-check
+## Acknowledgements
 
-```bash
-node fisheye.mjs selftest        # dependencies / platform adapters / APIs / optional tools / disk
-node fisheye.mjs selftest --deep # plus frame-extraction and subtitle-band probes
-```
+The design (official subtitles first, rate-based density, refine loop) and some directory conventions were informed by **SurfCore** (QQ ↔ DeepSeek Harness bridge and Bilibili tooling, MIT, Copyright (c) 2026 Derpyu520 and qq-bridge / QSH contributors). `danmaku-filter.mjs` derives from the same module in SurfCore; see the third-party notices at the end of [LICENSE](./LICENSE).
 
-Marks: `[OK]` pass, `[--]` skipped (optional tool missing / no data), `[!!]` failed.
-Failures print fix hints at the end.
-
-## Known limits
-
-- **Capabilities vary by platform**: Bilibili is richest (subs + danmaku + ads); local/URL have no danmaku, ad detection relies on "transcript signals" (subtitle/transcription keywords + patterns), visual OCR signals not yet built.
-- **Login required (Bilibili only)**: some subtitle/playback URLs need cookies.
-- **Semantic segmentation needs dialogue**: auto-skips when there's no official subs and transcription is unavailable; low-dialogue videos (pure music / pure visuals) yield no meaningful shift points.
-- **Bilibili APIs can change**: `selftest` pinpoints which step broke.
-
-## Docs
-
-- `docs/DESIGN.md` — design rationale
-- `docs/EXPERIMENTS.md` — real experiments
-- `docs/CONFIG.md` — configuration & troubleshooting
-- `docs/REVIEW.md` — verification checklist
-
-## Credits
-
-fisheye started as a video-understanding command inside a DSH plugin and was later
-split into a standalone CLI. Its design ideas (official subtitles first, density by
-motion rate, refine loop) and part of the directory layout were informed by
-**SurfCore** (a QQ ↔ DeepSeek Harness bridge and Bilibili tooling plugin),
-MIT License, Copyright (c) 2026 Derpyu520 and qq-bridge / QSH contributors.
-
-`danmaku-filter.mjs` is derived from the same module in SurfCore and keeps the
-original MIT copyright notice — see [LICENSE](./LICENSE) for the third-party code notice.
-
-Third-party dependencies:
-
-| Dependency | Purpose | License |
-|---|---|---|
-| [ffmpeg](https://ffmpeg.org/) | frame extraction, tiling, subtitle-band slicing | LGPL/GPL |
-| [numpy](https://numpy.org/) · [Pillow](https://python-pillow.org/) | subtitle-band detection (optional) | BSD / MIT-CMU |
-| [whisper.cpp](https://github.com/ggml-org/whisper.cpp) | audio transcription (optional) | MIT |
-| [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) | OCR (optional) | Apache-2.0 |
-| [yt-dlp](https://github.com/yt-dlp/yt-dlp) | any-platform video download (optional) | Unlicense |
-| [fastembed](https://github.com/qdrant/fastembed) + [ruptures](https://github.com/deepcharles/ruptures) | semantic segmentation (optional, standalone Python module) | Apache-2.0 / BSD-2 |
+Third-party: ffmpeg, numpy/Pillow, whisper.cpp, Tesseract OCR, yt-dlp, fastembed + ruptures (optional components, see the Chinese README table).
 
 ## License
 
-[MIT](./LICENSE) © 2026 fisheye contributors
-
-For personal study/research only. Video, subtitle, danmaku and comment
-copyrights belong to their original authors/uploaders.
+MIT
