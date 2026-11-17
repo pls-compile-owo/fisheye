@@ -1,8 +1,8 @@
-# fisheye
+# fisheye · tokencut
 
 [English](./README.en.md) | [中文](./README.md)
 
-> 让 AI agent 按需看图，而不是每 10 秒抓一帧。
+> 给 AI 按 token 预算看懂视频——像 tokencut 一样把视频的 token 开销剪下来，而不是每 10 秒抓一帧。
 
 一个命令行工具：**在 token 预算内，尽可能看懂一条视频**——不管它来自 B 站、本地文件，还是任意 URL。
 

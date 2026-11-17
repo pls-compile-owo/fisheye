@@ -1,8 +1,8 @@
-# fisheye
+# fisheye · tokencut
 
 [English](./README.en.md) | [中文](./README.md)
 
-> Let AI agents *see* videos on a token budget — instead of grabbing one frame every 10 seconds.
+> Let AI agents *see* videos on a token budget — **tokencut** the token cost of video understanding, instead of grabbing one frame every 10 seconds.
 
 A CLI tool that **understands a video within a given token budget** — whether it's from Bilibili, a local file, or any URL.
 
