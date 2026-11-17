@@ -3,8 +3,8 @@
 import os
 from PIL import Image, ImageDraw, ImageFont
 
-WORK = os.environ.get("GIF_WORK", r"C:\Users\Marsw\AppData\Local\Temp\fisheye-gif")
-OUT = os.environ.get("GIF_OUT", r"C:\Users\Marsw\Desktop\fisheye-demo.gif")
+WORK = os.environ.get("GIF_WORK", os.path.join(os.environ.get("TEMP", "."), "fisheye-gif"))
+OUT = os.environ.get("GIF_OUT", os.path.join(os.path.expanduser("~"), "Desktop", "fisheye-demo.gif"))
 
 W, H = 960, 640
 BG = (13, 17, 23)

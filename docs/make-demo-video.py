@@ -17,8 +17,8 @@ import os
 import subprocess
 from PIL import Image, ImageDraw, ImageFont
 
-WORK = os.environ.get("VID_WORK", r"C:\Users\Marsw\AppData\Local\Temp\fisheye-gif")
-OUT = os.environ.get("VID_OUT", r"C:\Users\Marsw\Desktop\fisheye-demo.mp4")
+WORK = os.environ.get("VID_WORK", os.path.join(os.environ.get("TEMP", "."), "fisheye-gif"))
+OUT = os.environ.get("VID_OUT", os.path.join(os.path.expanduser("~"), "Desktop", "fisheye-demo.mp4"))
 FPS = 30
 W, H = 1280, 720
 DURATION = 77.0
@@ -433,7 +433,7 @@ def main():
             print(f"frame {i}/{total}", flush=True)
     print("encoding...", flush=True)
     cmd = [
-        r"C:\Users\Marsw\.dsh\surfcore\bili\bin\ffmpeg.exe", "-y", "-hide_banner", "-loglevel", "error",
+        os.environ.get("FFMPEG") or "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
         "-framerate", str(FPS), "-i", os.path.join(frame_dir, "f%04d.png"),
         "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-pix_fmt", "yuv420p",
         "-movflags", "+faststart", OUT,

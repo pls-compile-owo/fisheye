@@ -2,6 +2,12 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.0.7] - 2026-11-18
+
+### Fixed
+
+- **隐私清理**：`lib/audio.mjs` 移除 `.dsh/surfcore/whisper/Release` 探测候选，`lib/ocr.mjs`/`lib/ytdlp.mjs` 注释去掉本机路径；`docs/make-demo-*.py` 默认路径改为环境变量/临时目录（不再含用户名绝对路径）。README 中的 SurfCore 署名保留（开源衍生致谢）。
+
 ## [1.0.6] - 2026-11-18
 
 ### Added
