@@ -66,6 +66,29 @@ pip install -r semantic/requirements.txt   # fastembed + ruptures + numpy
 
 想换模型或接自己的 CLI：设 `SEMANTIC_CLI` / `SEMANTIC_PYTHON` 环境变量。自定义 CLI 契约见 `semantic/cli.py` 头部注释（输入 `[{t,text}]`，stdout 输出 `{segments,suggestions}`）。
 
+## macOS 安装（Apple Silicon / Intel）
+
+```bash
+# 基础
+brew install node ffmpeg python3
+
+# 可选能力
+brew install whisper-cpp                 # 音频转写（arm64 产物可能叫 whisper-cpp-darwin-arm64，fisheye 已按前缀自动发现）
+brew install tesseract tesseract-lang    # OCR
+pip3 install --user yt-dlp               # 任意平台视频
+
+# 语义切分（可选）
+pip3 install -r semantic/requirements.txt
+```
+
+**Python 依赖**：字幕带检测需要 `numpy` + `Pillow`，必须装在 **fisheye 实际调用的那个 python3** 上：
+
+```bash
+python3 -c "import numpy, PIL"   # 自检会用同一解释器验证，缺依赖会显示 [--]
+```
+
+**解压**：Windows 打的 zip 在 macOS 上可能解出反斜杠命名的坏文件。推荐直接 `npm i -g @pls-compile-owo/fisheye`，或下载 `npm pack` 生成的 `.tgz`（POSIX 路径安全）。
+
 ## 安装
 
 **前置**：Node.js 18+、ffmpeg

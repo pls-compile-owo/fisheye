@@ -49,6 +49,17 @@ The core knows nothing about any specific platform. Each platform is an **adapte
 
 Adding a platform = copy `lib/platforms/_template/` + add one import to the registry. **Static registration + directory convention** (not hot-plug): fisheye is a local CLI, platforms ship built-in.
 
+## macOS Install
+
+```bash
+brew install node ffmpeg python3
+brew install whisper-cpp tesseract tesseract-lang   # optional
+pip3 install --user yt-dlp                          # optional
+pip3 install -r semantic/requirements.txt           # optional (semantic)
+```
+
+Subtitle-band detection needs `numpy` + `Pillow` on the **same python3 fisheye invokes** (`python3 -c "import numpy, PIL"`). Prefer `npm i -g` over unzipping a Windows-made zip (backslash paths break on macOS).
+
 ## Install
 
 Requirements: Node.js 18+, ffmpeg.

@@ -2,6 +2,21 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.0.1] - 2026-11-17
+
+### Fixed（macOS 安装复盘）
+
+- **A1 音频转写坏**：`lib/audio.mjs` 缺 `spawnSync` import（解耦重构漏移），转写时报 `spawnSync is not defined`。已补，实测转写通过。
+- **A5 whisper 命名**：arm64 macOS 产物 `whisper-cpp-darwin-arm64` 不被识别——自动发现加 `whisper-cpp-*` 前缀通配。
+- **A6 输出目录假象**：selftest 写可写性检查前先幂等 `mkdir -p out`，"目录不存在"不再被误报为不可写。
+- **A3 解释器一致性**：selftest 的 python 检查改为对**实际调用的解释器**跑 `-c "import numpy, PIL"`；缺依赖显示 `[--]` 并说明降级，而不是"python 在"就 OK。
+- **字幕带实测误报**：python 依赖不可用时标记跳过而非失败。
+
+### Added（A2/C 自检端到端）
+
+- `selftest --deep` 新增真实调用链样例：ffmpeg testsrc 1s 解码、OCR 识别随包样图、whisper 静音 3s 转写、语义 3 行台词切分（校验输出契约）。
+- README 新增「macOS 安装」节（brew 依赖、Python 解释器要求、zip 反斜杠问题与 npm/tgz 建议）；英文 README 同步。
+
 ## [1.0.0] - 2026-11-17
 
 ### Added
