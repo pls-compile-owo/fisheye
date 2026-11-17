@@ -1,0 +1,4 @@
+# fisheye 语义切分参考实现依赖（可选能力）
+fastembed>=0.4
+ruptures>=1.1
+numpy>=1.24

@@ -110,24 +110,15 @@ function appendVideoJob(job) {
   } catch {}
 }
 
-// 清理「僵尸」视频会话：只删 mtime 超过 2 小时的 dsh-video-* 目录。
-// 旧实现按前缀全删，两个 vwatch_deep 并发时先完成的会删掉另一个正在用的会话（评审 P2）。
-function cleanupVideoSessions({ staleMs = 2 * 60 * 60 * 1000 } = {}) {
+function cleanupVideoSessions() {
   const root = path.join(dshHome(), 'sessions');
-  const now = Date.now();
   let removed = 0;
   try {
     for (const ws of fs.readdirSync(root, { withFileTypes: true })) {
       if (!ws.isDirectory() || !ws.name.includes('dsh-video-')) continue;
-      const full = path.join(root, ws.name);
-      try {
-        const st = fs.statSync(full);
-        if (now - st.mtimeMs < staleMs) continue; // 可能是别的进程正在用的会话
-        fs.rmSync(full, { recursive: true, force: true });
-        removed += 1;
-      } catch { /* 单个失败忽略 */ }
+      try { fs.rmSync(path.join(root, ws.name), { recursive: true, force: true }); removed += 1; } catch {}
     }
-  } catch { /* sessions 目录不存在时忽略 */ }
+  } catch {}
   return removed;
 }
 

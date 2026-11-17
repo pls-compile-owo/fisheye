@@ -26,7 +26,7 @@ jobs:
           done
 
       - name: Unit tests
-        run: node --test --test-concurrency=1 test/
+        run: node --test test/
 
       - name: Danmaku filter tests
         run: node test-danmaku-filter.js

@@ -14,7 +14,7 @@ cd fisheye
 node --check fisheye.mjs
 python -c "import ast; ast.parse(open('analyze_subs.py', encoding='utf-8').read())"
 
-# 2. 单元测试（弹幕过滤规则，48 用例）
+# 2. 单元测试（node test-danmaku-filter.js，51 断言）
 node test-danmaku-filter.js
 
 # 3. 自检（依赖/凭证/API/缓存/磁盘）

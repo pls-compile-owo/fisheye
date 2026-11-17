@@ -16,7 +16,7 @@ labels: bug
 - OS:
 - Node.js version:
 - ffmpeg version:
-- vwatch version (`node vwatch.mjs selftest`):
+- vwatch version (`node fisheye.mjs selftest`):
 
 **Logs**
 <!-- paste relevant output; remove any credentials! -->

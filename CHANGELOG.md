@@ -2,47 +2,32 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
-## [0.9.4] - 2026-11-16
+## [1.0.0] - 2026-11-17
 
-### Docs
+### Added
 
-- README 新增「WorkBuddy（腾讯桌面智能体）」接入说明：MCP 注册方式、依赖前提、工具名注意点、CLI 替代方案；英文 README 同步简版。
+- **平台解耦**：核心改为平台无关，B 站/本地/URL 通过「平台适配器」接入（静态注册 + 目录约定），`auto <BV|文件|URL>` 一个命令通吃。
+- **平台适配器**：bilibili / local / url 三个内置适配器 + `_template` 模板（复制即接入新平台）+ `_probe` 时长探测 + 注册表。
+- **广告识别平台化**：六路信号拆成可组合多信号源 + 关键词参数化 + 台词族（无弹幕增强）+ confidence 修复（台词族命中 → high）。
+- **语义识别模块**（可选能力）：embedding + 变点检测识别话题切换点，零 token 纯 CPU；`semanticShifts` 写 manifest，语义切换点喂精读建议（`source:'semantic'`）。
+- **manifest 版本校验**：`version` 字段 + `loadManifestState` 校验（旧产物兼容、过新报错）。
+- **`lib/proc.mjs`**：三个可选能力（audio/ocr/ytdlp）共用进程探测工具抽取。
 
-## [0.9.3] - 2026-11-15
+### Changed
+
+- **selftest**：改为遍历平台适配器自检，不再硬编码 B 站。
+- **广告台词族门槛**：句式 ≥2 命中、关键词 ≥3 命中或持续 ≥30s（避免正文吐槽误报）。
+- **URL 规范化哈希**：去掉时间戳/分享参数再哈希，断点续跑稳定。
+- **本地/URL 平台**：无弹幕走台词族广告识别，字幕走转写/字幕带兜底。
 
 ### Fixed
 
-- **`grid` 命令在发布包中不可用**：`fisheye.mjs` 的 util 导入漏了 `gridStr`，发布版运行 `grid` 报 `gridStr is not defined`。0.5.0 起发布版一直存在此问题（本地开发版已手动补过但发布物缺），本次修复。感谢用户反馈。
+- 广告 confidence 只由弹幕关键词决定的缺陷（台词族命中不参与「广告不占帧」）。
+- 止损线「召回≥60% 且 误报≤2/10min」联合通过线（修复召回<60% 不触发的漏洞）。
 
-## [0.9.2] - 2026-11-14
+### Tests
 
-### Fixed（外部评审问题修复）
-
-- **广告检测 confidence 与六路信号一致**：字幕关键词 / 数字打点 / 消费回溯 / 片头强信号命中直接判 high（此前只有弹幕关键词才算 high，这些信号不参与「广告不占帧/精读避开」）。
-- 消费回溯（buy）要求附近 ≥2 条购买信号，避免观众正常讨论「买了」误报。
-- **ensureMp4 流式下载**：不再全量读进内存；超时语义改为「连续 60s 无新数据才中止」，大文件不再被 5 分钟总超时误杀。
-- **cleanupVideoSessions** 只清理 mtime 超过 2 小时的僵尸会话，不再误删并发进程正在用的会话。
-- **stageLocal 时长探测加 -t 0**：只读 header 立即退出（实测 30s→0.4s），不再解码全片。
-- `detectScenes` 开头补 mkdirSync(OUT)（单独跑 grid 时场景检测不再静默失效）。
-- 清理未使用导入；frame.mjs 移除未用的 os/spawnSync。
-- stageGrab 过滤负数时间点；stageSubs 文件名用实际行数；lowDensity 钳制为 ≥0。
-- getOfficialSubs 质量判定统一走 assessSubtitleQuality（消除两处可能不同步的内联实现）。
-- stageRefine 的 decisions 越界校验改用 manifest.range（区间外点不再被放过）。
-- 精读日志说明 geo 已含弹幕热区。
-
-### Changed
-
-- **抽 `lib/proc.mjs`**：audio / ocr / ytdlp 三个可选模块的进程探测公共代码（capture/whereAll/spawnable/readText/tmpFile/stripQuotes/resolveFfmpeg）收敛为一份实现（评审指出的最大可维护性问题）。
-
-## [0.9.1] - 2026-11-14
-
-### Changed
-
-- **planner / executor 拆分**（重构，行为不变）：
-  - `lib/planner.mjs`：纯函数规划器（密度阶梯 / 张数 / 预算钳制 / 成本估算），不碰 IO。
-  - `lib/executor.mjs`：几何挑点 + 精读建议（纯数据），`MIN_READABLE_SUBS_PX` 一并移入。
-  - `stageAuto` 只做编排：采集信号 → planAuto 决策 → stageGrid/stageSubs 执行。
-  - 新增 14 个单测（planner 8 + executor 6），行为与重构前逐行一致（真实 auto 输出对比仅路径差异）。
+- 全量 148 用例（147 通过 + 1 跳过），golden 广告真值 8 条保持零回归。
 
 ## [0.9.0] - 2026-11-14
 

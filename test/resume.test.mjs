@@ -72,6 +72,19 @@ test('loadManifestState：读回 manifest；不存在 / 坏 JSON → null；BOM 
   assert.equal(loadManifestState(dir, bvid).bvid, 'x')
 })
 
+test('manifest 版本校验：无 version 视为 v1（兼容旧产物）；过新版本返回 null', (t) => {
+  const dir = tmpDir(t)
+  // 无 version → 兼容旧产物，正常读
+  fs.writeFileSync(manifestPath(dir, 'BVold'), '{"bvid":"BVold","chunks":[]}', 'utf8')
+  assert.equal(loadManifestState(dir, 'BVold').bvid, 'BVold')
+  // version 1 → 正常
+  fs.writeFileSync(manifestPath(dir, 'BVv1'), '{"version":1,"bvid":"BVv1","chunks":[]}', 'utf8')
+  assert.equal(loadManifestState(dir, 'BVv1').bvid, 'BVv1')
+  // version 2 → 过新，返回 null（不是静默解析错）
+  fs.writeFileSync(manifestPath(dir, 'BVv2'), '{"version":2,"bvid":"BVv2","chunks":[]}', 'utf8')
+  assert.equal(loadManifestState(dir, 'BVv2'), null)
+})
+
 test('saveManifest：校验参数，写出的内容能原样读回，且不留临时文件', (t) => {
   const dir = tmpDir(t)
   assert.throws(() => saveManifest(dir, '', {}), TypeError)

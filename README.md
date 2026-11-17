@@ -4,11 +4,15 @@
 
 > 让 AI agent 按需看图，而不是每 10 秒抓一帧。
 
-一个命令行工具：**在 token 预算内，尽可能看懂一条 B 站视频**。
+一个命令行工具：**在 token 预算内，尽可能看懂一条视频**——不管它来自 B 站、本地文件，还是任意 URL。
 
 ```
-node fisheye.mjs auto BV1xxx --budget 20000
+node fisheye.mjs auto BV1xxx --budget 20000          # B 站
+node fisheye.mjs auto video.mp4 --budget 20000       # 本地文件
+node fisheye.mjs auto https://... --budget 20000     # 任意 URL（yt-dlp）
 ```
+
+一个 `auto` 命令通吃多平台，自动识别输入类型，走对应的平台适配器。
 
 ---
 
@@ -23,7 +27,7 @@ node fisheye.mjs auto BV1xxx --budget 20000
 
 差别不在「抽得少」，而在**抽得准**——fisheye 判断哪些时间点值得看，以及**用什么方式看最省**。
 
-## 核心思路：四路信息源 + 一个闭环
+## 核心思路：多路信息源 + 一个闭环
 
 不是所有信息都要用图片读。按「单位 token 的信息量」排序，能省的先省：
 
@@ -31,10 +35,36 @@ node fisheye.mjs auto BV1xxx --budget 20000
 |---|---|---|---|
 | ① | **官方字幕**（CC 字幕轨，优先 AI 中文字幕） | 几百 token | 视频有字幕时——文本比图便宜一个数量级 |
 | ② | **烧录字幕带**（字幕烧进画面） | ~1000 token | 无官方字幕但画面底部有字幕 |
-| ③ | **弹幕热区**（观众反应） | ~100 token | 找观众最激动的时间点，**画面和字幕都看不出这个** |
+| ③ | **弹幕热区**（观众反应，B 站） | ~100 token | 找观众最激动的时间点，**画面和字幕都看不出这个** |
 | ④ | **画面拼图**（3×3 网格） | 1200~3800 token/张 | 兜底：真正需要看画面时 |
+| ⑤ | **语义切分**（话题切换点，可选） | 零 token | 识别视频在哪个时间点换了话题/段落，喂精读建议 |
 
 然后对少数关键点做**精读**（原分辨率单帧），只在那里花大钱。
+
+## 平台适配器
+
+fisheye 核心不认识任何具体平台。每个平台是一个「适配器」，遵循统一契约（`meta` / `media` / `subtitles` / `danmaku` / `adDetector`）：
+
+| 适配器 | 输入 | 能力 |
+|---|---|---|
+| `bilibili` | BV 号 | 官方字幕 + 弹幕 + 下载 + 广告识别（弹幕族） |
+| `local` | 本地文件路径 | 直接抽帧，字幕走转写/字幕带兜底 |
+| `url` | http(s) 链接 | yt-dlp 下载，其余同本地 |
+
+加平台 = 照 `lib/platforms/_template/` 抄一个目录 + 注册表加一行 import，不碰核心。**静态注册 + 目录约定**（不是热插拔）：fisheye 是本地 CLI，平台内置随包发布。
+
+### 语义切分（可选）
+
+**随包附带参考实现** `semantic/cli.py`（fastembed embedding + ruptures 变点检测，零 token、纯 CPU）：
+
+```bash
+pip install -r semantic/requirements.txt   # fastembed + ruptures + numpy
+# 首次运行会自动下载中文 embedding 模型（BAAI/bge-small-zh-v1.5，约 100MB）
+```
+
+装好依赖后 `auto` 会自动启用（有官方字幕时）：识别话题切换点写进 manifest 的 `semanticShifts`，并在精读建议里以 `semantic` 来源列出。没有依赖/没装模型时会静默降级，不影响主流程。
+
+想换模型或接自己的 CLI：设 `SEMANTIC_CLI` / `SEMANTIC_PYTHON` 环境变量。自定义 CLI 契约见 `semantic/cli.py` 头部注释（输入 `[{t,text}]`，stdout 输出 `{segments,suggestions}`）。
 
 ## 安装
 
@@ -52,7 +82,7 @@ cd fisheye
 npm link   # 可选：装成全局命令
 ```
 
-### 配置 B 站登录态
+### 配置 B 站登录态（只用 B 站时需要）
 
 复制 `credentials.example.json` 为 `credentials.json`，填入三个值：
 
@@ -66,7 +96,7 @@ npm link   # 可选：装成全局命令
 
 获取：浏览器登录 B 站 → F12 → Application → Cookies → `bilibili.com`，复制这三个字段。
 
-> ⚠️ 这个文件已被 `.gitignore` 排除，**永远不要提交**。
+> ⚠️ 这个文件已被 `.gitignore` 排除，**永远不要提交**。本地文件 / URL 平台不需要登录态。
 
 ### 环境变量
 
@@ -78,6 +108,8 @@ npm link   # 可选：装成全局命令
 | `FISHEYE_WHISPER` | whisper.cpp 可执行文件路径（音频转写，可选；不装则跳过） |
 | `FISHEYE_WHISPER_MODEL` | whisper 模型文件（ggml-*.bin，可选） |
 | `FISHEYE_HOME` | 数据目录（cache/out 位置，默认项目目录） |
+| `SEMANTIC_CLI` | 语义切分 CLI 路径（可选；**默认使用随包的 `semantic/cli.py`**） |
+| `SEMANTIC_PYTHON` | 跑语义模块的 Python（需带 fastembed + ruptures；不设则用系统 python） |
 | `FFMPEG` / `PYTHON` / `BILI_CRED` | 工具与登录态路径覆盖 |
 
 ### 依赖路径（一般不用管）
@@ -108,8 +140,10 @@ fisheye 按这个顺序找 ffmpeg / python / 凭证：
 # 1. 先自检（0.6 秒，确认依赖/凭证/API 都通）
 node fisheye.mjs selftest
 
-# 2. 自动规划并铺网
+# 2. 自动规划并铺网（B 站 / 本地 / URL 都行）
 node fisheye.mjs auto BV1ziWP6qENy --budget 20000
+node fisheye.mjs auto video.mp4 --budget 20000
+node fisheye.mjs auto "https://www.bilibili.com/video/BV1ziWP6qENy" --budget 20000
 
 # 3. 看 out/ 目录里的拼图，或读 manifest 决定要不要精读
 node fisheye.mjs refine BV1ziWP6qENy
@@ -134,12 +168,12 @@ node fisheye.mjs grab BV1ziWP6qENy 82.5,145.0
 
 | 文件 | 内容 |
 |---|---|
-| `<BV>-cNN_起-止_3x3.jpg` | 拼图（每格一张画面，从左到右、从上到下按时间排列） |
-| `<BV>-subs_N行.jpg` | 字幕带（只有字幕区，竖排 N 行） |
-| `<BV>-official-subs.txt` | 官方字幕全文（带时间戳）；另有一份 `-official-subs-plain.txt` 纯文本 |
-| `<BV>-manifest.json` | **结构化索引**：每张图的时间范围、每格时间戳、变化强度、弹幕热区、广告段 |
+| `<id>-cNN_起-止_3x3.jpg` | 拼图（每格一张画面，从左到右、从上到下按时间排列） |
+| `<id>-subs_N行.jpg` | 字幕带（只有字幕区，竖排 N 行） |
+| `<id>-official-subs.txt` | 官方字幕全文（带时间戳）；另有一份 `-official-subs-plain.txt` 纯文本 |
+| `<id>-manifest.json` | **结构化索引**：每张图的时间范围、每格时间戳、变化强度、弹幕热区、广告段、`semanticShifts`（语义切换点） |
 
-终端输出一份「规划报告」，解释每个决策。
+`<id>` 是「文件名安全」的稳定标识：B 站 = BV 号，本地 = 文件 basename，URL = 规范化后的哈希。终端输出一份「规划报告」，解释每个决策。
 
 > 下面的示例**拼自三条不同视频**（竖屏猫狗 / LOL 游戏 / 40 分钟长视频），只用来说明每一段的格式——数字之间不用互相推导。
 
@@ -147,6 +181,7 @@ node fisheye.mjs grab BV1ziWP6qENy 82.5,145.0
 [比例] 画面 1080x1920 → 拼图 1920x3414，单张约 3793 token
 [内容] 显著变化 14 处，变化率 0.13 次/秒
 [字幕] 无可用官方字幕，检出烧录字幕带（82%-90%，置信度 0.63）→ 字幕带 1 张
+[语义] 切出 3 个话题切换点
 [广告段] 弹幕密度低谷 1 段：
        04:40-06:40（120s）疑似广告  密度比全片低 34%  关键词「感谢金主爸爸」
 [弹幕] 335 条，观众最激动的时段：
@@ -168,24 +203,26 @@ node fisheye.mjs auto BV1xxx --budget 20000 --resume   # 跳过已抽帧阶段�
 node fisheye.mjs auto BV1xxx --budget 20000 --force    # 强制全部重跑
 ```
 
+manifest 带 `version` 字段做格式校验，旧产物自动兼容；格式过新的 manifest 会明确报「请升级 fisheye」而不是静默解析错。
+
 ## 命令
 
 | 命令 | 作用 |
 |---|---|
-| `auto <BV>` | 推荐入口：自动规划密度/张数/字幕策略，然后铺网 |
+| `auto <BV\|文件\|URL>` | 推荐入口：自动识别平台 → 规划密度/张数/字幕策略 → 铺网 |
 | `grid <BV>` | 只铺网（`--chunk` 秒/段、`--grid` 如 3x3） |
 | `subs <BV>` | 只生成字幕带（`--count` 行数、`--band auto\|0.22`） |
 | `refine <BV>` | 挑出值得精读的时间点，**并直接截好原图**（三种模式：模板 / 决策文件 / 几何兜底） |
 | `grab <BV> <t1,t2>` | 按时间点截原分辨率单帧（手动指定） |
-| `local <视频文件>` | 本地视频：ffmpeg 抽帧拼图（`--grid`、`--from`/`--to`） |
+| `local <视频文件>` | 本地视频快捷方式（等价于 `auto <文件>`） |
 | `transcribe <BV>` | 音频转写（whisper.cpp，`--lang zh`） |
 | `ocr <图片>` | OCR 识别图片文字（tesseract，`--lang chi_sim+eng`） |
-| `url <链接>` | 任意平台视频（yt-dlp 下载后走本地流程） |
+| `url <链接>` | URL 快捷方式（等价于 `auto <链接>`） |
 | `batch <清单文件\|条目...>` | 批量处理（`--concurrency N` 并发） |
 | `clean [--target cache\|out\|all] [--yes]` | 清理缓存/产物（默认 dry-run） |
-| `selftest [--deep]` | 自检：依赖 / 凭证 / API / OCR / 转写 / yt-dlp / 缓存 / 磁盘 |
+| `selftest [--deep]` | 自检：依赖 / 平台适配器 / API / OCR / 转写 / yt-dlp / 语义 / 缓存 / 磁盘 |
 
-> `grid` / `subs` / `refine` / `grab` 都要求 `cache/<BV>.mp4` 已存在——第一次用请先跑 `auto`（它会下载）。
+> `grid` / `subs` / `refine` / `grab` 都要求 `cache/<id>.mp4` 已存在——第一次用请先跑 `auto`（它会下载）。
 
 ### 参数范围
 
@@ -214,30 +251,28 @@ node fisheye.mjs auto BV1xxx --budget 20000 --force    # 强制全部重跑
 ## 本地视频
 
 ```bash
-node fisheye.mjs local <视频文件> [--grid 3x3] [--from 30] [--to 90]
+node fisheye.mjs auto <视频文件> [--grid 3x3] [--from 30] [--to 90]
 ```
 
 不依赖 B站 登录与字幕：ffmpeg 解析时长 → 按 grid 等间隔抽帧拼图 → 输出 `SHEET: <拼图路径>`。
-把拼图路径交给模型 `read_image` 即可"看"本地视频。适合 mp4/mkv/avi/mov/webm。
+没有官方字幕时自动尝试 whisper 转写（口播/播客类）；转写不可用则检测烧录字幕带。适合 mp4/mkv/avi/mov/webm。
 
-## 音频转写
+## 语义识别（可选能力）
 
-装了 whisper.cpp 后，可以给无字幕视频做语音转写：
+fisheye 能识别视频「在哪个时间点换了话题/段落」——用字幕文本（官方字幕优先）+ 本地 embedding + 变点检测，**零 token、纯 CPU**，补上「画面变化 + 弹幕变化」之外的第三层「语义变化」。
 
-```bash
-node fisheye.mjs transcribe BV1xxx [--lang zh]
-```
+- 有官方字幕时自动启用：`auto` 会切出话题切换点，写进 manifest 的 `semanticShifts`，并作为「结构信号」喂给精读建议（`source: 'semantic'`）。
+- 无官方字幕时自动跳过（语义切分需要带时间戳的台词）。
+- 实现是独立 Python 模块（`src/cli.py` + `fastembed` + `ruptures`，独立 Python 模块））。
+模型放到项目 bin/ 或任意目录，用 `FISHEYE_WHISPER_MODEL` 指定。
+转写文本落 `out/<id>-audio-transcript.txt`。
 
-自动探测顺序：`FISHEYE_WHISPER` 环境变量 → PATH → 常见安装路径（含 `~/.dsh/surfcore/whisper/Release/`）。
-模型放 `~/.dsh/surfcore/whisper/`（`ggml-*.bin`）或用 `FISHEYE_WHISPER_MODEL` 指定。
-转写文本落 `out/<BV>-audio-transcript.txt`。
-
-> **默认策略**：`auto` 发现视频没有官方字幕时，会自动尝试 whisper 转写（口播/播客类比抽帧省 token）；转写文本作为台词源，跳过烧录字幕带。不想用加 `--no-audio` 或设 `FISHEYE_AUTO_AUDIO=0`。
+> **默认策略**：`auto` 发现视频没有官方字幕时，会自动尝试 whisper 转写；转写文本作为台词源，跳过烧录字幕带。不想用加 `--no-audio` 或设 `FISHEYE_AUTO_AUDIO=0`。
 
 ### 字幕翻译
 
 外文视频（英文/日文等）的官方字幕会同时读取 B站 的**中文翻译轨**（l2 机器翻译），
-转写结果旁会打印翻译行数，翻译文本落盘 `out/<BV>-official-subs-translated.txt`。
+转写结果旁会打印翻译行数，翻译文本落盘 `out/<id>-official-subs-translated.txt`。
 没有翻译轨的视频不会凭空翻译（不接外部翻译 API）。
 
 ## OCR（图片文字识别）
@@ -251,15 +286,15 @@ node fisheye.mjs ocr screenshot.png [--lang chi_sim+eng]
 自动探测 `FISHEYE_TESSERACT` → PATH → 常见安装路径；语言包缺 `chi_sim` 时自动降级到 `eng`。
 识别结果落 `out/<图片名>.ocr.txt`。
 
-## 任意平台视频（yt-dlp）
+## 任意平台视频（URL）
 
 装了 yt-dlp 后可以直接给任意平台（YouTube/抖音/Twitter…）的链接：
 
 ```bash
-node fisheye.mjs url "https://www.youtube.com/watch?v=xxx"
+node fisheye.mjs auto "https://www.youtube.com/watch?v=xxx"
 ```
 
-下载（yt-dlp）→ 自动走本地视频抽帧流程。探测顺序：`FISHEYE_YTDLP` → PATH → 常见安装路径。
+下载（yt-dlp）→ 自动走本地视频流程。URL 会先「规范化」（去掉时间戳/分享参数）再哈希做 id，保证断点续跑稳定。
 
 ## 批量处理
 
@@ -276,7 +311,7 @@ node fisheye.mjs batch BV1xxx BV2xxx "C:\videos\a.mp4"
 node fisheye.mjs batch list.txt --concurrency 3
 ```
 
-每一项按类型自动分派：BV → auto、路径 → local、链接 → url。
+每一项按类型自动分派：BV → bilibili、路径 → local、链接 → url。
 
 ## 清理
 
@@ -288,7 +323,7 @@ node fisheye.mjs clean --target out --yes # 实际删除 out/
 ## 自检
 
 ```bash
-node fisheye.mjs selftest        # 快速检查依赖 / 凭证 / API / 可选组件 / 磁盘
+node fisheye.mjs selftest        # 快速检查依赖 / 平台适配器 / API / 可选组件 / 磁盘
 node fisheye.mjs selftest --deep # 额外做抽帧 + 字幕带实测（需缓存视频）
 ```
 
@@ -297,9 +332,9 @@ node fisheye.mjs selftest --deep # 额外做抽帧 + 字幕带实测（需缓存
 | 类别 | 检查内容 |
 |---|---|
 | 基础 | Node 版本、ffmpeg、python（可选）、analyze_subs.py |
-| 环境 | 输出目录可写、B站 凭证、缓存目录、磁盘剩余 |
-| API | 视频 API、弹幕 API、官方字幕 API（含翻译轨） |
-| 可选组件 | 音频转写（whisper）、OCR（tesseract）、yt-dlp |
+| 环境 | 输出目录可写、缓存目录、磁盘剩余 |
+| 平台适配器 | 遍历注册表：B 站凭证 / 视频 API / 弹幕 API / 官方字幕 API（含翻译轨） |
+| 可选组件 | 音频转写（whisper）、OCR（tesseract）、yt-dlp、语义切分 |
 
 输出标记：`[OK]` 通过、`[--]` 跳过（可选依赖未装/无数据）、`[!!]` 失败。
 失败时末尾会打印修复提示；`--deep` 会额外实测抽帧与字幕带检测。
@@ -308,7 +343,7 @@ node fisheye.mjs selftest --deep # 额外做抽帧 + 字幕带实测（需缓存
 
 `mcp-video-server.js` 把 fisheye 包装成 [MCP](https://modelcontextprotocol.io/)（Model Context Protocol）工具，让支持 MCP 的 agent 环境（DSH / Claude Code / Cursor 等）**不必自己拼命令行**就能看视频。
 
-这是**可选组件**：fisheye 核心保持零依赖，不装下面两个 npm 包也能正常用 `auto` / `local` 等命令。
+这是**可选组件**：fisheye 核心保持零依赖，不装下面两个 npm 包也能正常用 `auto` 等命令。
 
 ### 安装
 
@@ -317,7 +352,7 @@ node fisheye.mjs selftest --deep # 额外做抽帧 + 字幕带实测（需缓存
 npm i @modelcontextprotocol/sdk zod
 ```
 
-除此之外还需要同目录的 `fisheye.mjs` + `lib/`、ffmpeg、B站 登录态（见上文「配置 B 站登录态」）。
+除此之外还需要同目录的 `fisheye.mjs` + `lib/`、ffmpeg、B站 登录态（只用 B 站时）。
 `vwatch_deep` 的「独立会话复述」额外需要本机安装 **DeepSeek Harness 桌面版**；没有时会自动降级，直接返回抽帧规划 + 官方字幕原文。
 
 ### 配置
@@ -358,47 +393,21 @@ Windows 路径用正斜杠或双反斜杠。若用 `FISHEYE_HOME` 挪过数据�
 
 > 工具名沿用旧名 `vwatch_*`，以免破坏已有的 MCP 配置。参数与 CLI 一一对应：`bvid` → BV 号，`from`/`to` → `--from`/`--to`，`page` → `--p`，`budget` → `--budget`。
 
-## WorkBuddy（腾讯桌面智能体）
-
-[WorkBuddy](https://www.codebuddy.cn/docs/workbuddy/) 是腾讯的 AI 桌面智能体工作台，内置 MCP 协议支持，可以直接接入 fisheye 的 MCP server：
-
-```bash
-# 1. 在 fisheye 目录装 MCP 依赖（可选组件，核心 CLI 零依赖）
-npm i @modelcontextprotocol/sdk zod
-```
-
-2. 在 WorkBuddy 的 `mcp.json` 里注册（结构同 Claude Code）：
-
-```json
-{
-  "mcpServers": {
-    "fisheye": {
-      "command": "node",
-      "args": ["C:/path/to/fisheye/mcp-video-server.js"]
-    }
-  }
-}
-```
-
-3. 重启 WorkBuddy，会话里会出现 `vwatch_scan` / `vwatch_deep` 两个工具（工具名沿用旧名兼容）。
-
-**注意**：
-- `vwatch_deep` 会启动独立的 DeepSeek Harness 桌面会话复述视频，在 WorkBuddy 里没有 DSH 桌面版时无法使用——建议 WorkBuddy 里只用 `vwatch_scan`，深读改用 CLI。
-- 不想配 MCP 也可以：WorkBuddy 能执行本地命令，直接让它跑 `node fisheye.mjs auto <BV> --budget 20000` 即可。
-
 ## 它怎么工作
 
 ```
-① 取元信息（分P / 时长 / 分辨率）
-② 时间范围（--from/--to）
-③ 画面比例 → 单张拼图 token 估算（竖屏是横屏的 3 倍！）
-④ 场景检测（ffmpeg 一次解码，320p）→ 内容变化率
-⑤ 字幕决策：官方字幕 > 烧录字幕带 > 只看画面
-⑥ 弹幕：热区（观众高光）+ 广告段（六路信号，见下）
-⑦ 密度决策：变化率 → 目标帧间隔（4/6/9/13 秒）
-⑧ 张数决策：密度需求 vs 预算封顶（硬上限 12 张）
-⑨ 铺网：分段 → 取帧（等间隔骨架 + 吸附画面变化点）→ 拼图
-⑩ 精读建议：场景变化 + 弹幕热区，避开广告段
+① 解析输入 → 平台适配器（BV / 本地文件 / URL）
+② 取元信息（分P / 时长 / 分辨率）
+③ 时间范围（--from/--to）
+④ 画面比例 → 单张拼图 token 估算（竖屏是横屏的 3 倍！）
+⑤ 场景检测（ffmpeg 一次解码，320p）→ 内容变化率
+⑥ 字幕决策：官方字幕 > 转写 > 烧录字幕带 > 只看画面
+⑦ 弹幕（B 站）：热区（观众高光）+ 广告段（多信号源）
+⑧ 语义切分（可选）：embedding + 变点检测 → 话题切换点
+⑨ 密度决策：变化率 → 目标帧间隔（4/6/9/13 秒）
+⑩ 张数决策：密度需求 vs 预算封顶（硬上限 12 张）
+⑪ 铺网：分段 → 取帧（等间隔骨架 + 吸附画面变化点）→ 拼图
+⑫ 精读建议：场景变化 + 弹幕热区 + 语义切换点，避开广告段
 ```
 
 ### 几个关键设计
@@ -417,20 +426,20 @@ npm i @modelcontextprotocol/sdk zod
 
 B 站的弹幕密度本身就是内容信号。实测一条 40 分钟视频：广告段的弹幕密度只有全片的 **31%**（观众跳过），而观众最激动的地方弹幕密度是 3~5 倍。
 
-**为什么广告检测有六路信号？**
-
-弹幕密度低谷只能抓到「观众跳过」的广告；真实广告形态太多——片头口播（无低谷）、观众刷「已下单」（消费信号）、观众打点「1407工程启动」（数字打点）、口播字幕含「下单/链接」（字幕信号）。六路信号按 8 条人工真值样本校准（7 条有广告全部命中、5 条无广告零误报），见 `test/golden/ad-truth/`。
-
 **为什么广告段可以不占帧？**
 
 把广告段从时间轴上「压缩掉」，剩余有效时间重新均分——帧数不变，内容密度提升。实测某张图：跳过 118 秒广告后，平均帧间隔从 22.1 秒降到 **8.3 秒**。
 
+**为什么语义切分不靠大模型？**
+
+把字幕/转写文本做 embedding 相似度 + 变点检测，识别「话题切换点」，零 token、纯 CPU。语义切换点作为「结构信号」喂精读建议，不融合进几何（几何是「内容信号」，语义是「结构信号」，性质不同）。
+
 ## 已知限制
 
-- **只支持 B 站**（接口依赖 BV 号 / cid / 字幕轨）
-- **依赖登录态**：部分视频的字幕/播放地址需要 cookies
-- **语义盲区**：场景检测只看像素变化，抓不到「同一个场景里的叙事切换」。变化率低的混剪视频可能被判「慢」，需要 `--density` 手动加密
-- **广告段检测是多路启发式**：密度低谷 / 关键词聚类 / 片头强信号 / 消费回溯 / 数字打点（弹幕） + 字幕关键词；稀疏弹幕（<0.2 条/s）的视频直接跳过检测。观众不刷广告词、无字幕、又不打点的长广告仍可能漏检
+- **能力随平台变化**：B 站最全（字幕+弹幕+广告）；本地/URL 无弹幕，广告识别靠「台词族」（字幕/转写关键词+句式），画面 OCR 视觉族未做
+- **依赖登录态（仅 B 站）**：部分视频的字幕/播放地址需要 cookies
+- **语义切分只对有字幕/对白的视频有效**：无官方字幕且转写不可用时自动跳过；对白少的视频（纯音乐/纯画面）切不出有意义的切换点
+- **广告段检测对 B 站（弹幕）最强**：无弹幕平台的台词族是补强，效果弱于弹幕族
 - **长视频成本高**：40 分钟视频官方字幕就要 1.2 万 token
 - **B 站接口会变**：`selftest` 能帮你快速定位是哪个环节挂了
 
@@ -446,15 +455,17 @@ node fisheye.mjs selftest --deep # 含抽帧/字幕带实测的自检
 
 | 文件 | 职责 |
 |---|---|
-| `fisheye.mjs` | CLI 入口（参数解析 / 依赖检查 / 命令分发） |
+| `fisheye.mjs` | CLI 入口（参数解析 / 输入解析 / 命令分发） |
+| `lib/platforms/` | 平台适配器（`bilibili` / `local` / `url` + `_template` 模板 + `_probe` 时长探测 + `index.mjs` 注册表） |
 | `lib/env.mjs` | 路径与依赖解析（ffmpeg / python / 凭证 / 配置） |
 | `lib/util.mjs` | 时间格式化 / 参数校验 / 文件头探测 |
-| `lib/bili.mjs` | B站 API（视频信息 / WBI 签名 / 官方字幕 / 弹幕） |
+| `lib/proc.mjs` | 进程探测共用工具（三个可选能力 audio/ocr/ytdlp 共用） |
+| `lib/bili.mjs` | B站纯函数 + API（视频信息 / WBI 签名 / 官方字幕 / 弹幕，被 bilibili 适配器调用） |
 | `lib/frame.mjs` | 抽帧与时间点选择（场景检测 / 字幕带定位 / 单帧截取） |
-| `lib/danmaku.mjs` | 弹幕分析（广告段检测 / 热区摘要） |
-| `lib/planner.mjs` | 规划器：密度 → 张数 → 预算钳制 → 成本估算（纯决策） |
-| `lib/executor.mjs` | 执行器：几何挑点 + 精读建议合并（纯数据） |
-| `lib/stages.mjs` | 子命令编排（auto / grid / subs / refine / grab / local / ocr / url / batch / clean / transcribe） |
+| `lib/danmaku.mjs` | 弹幕分析 + 广告段检测（多信号源，关键词参数化） |
+| `lib/semantic.mjs` | 语义切分能力探测 + 子进程调用（独立 Python 模块） |
+| `lib/executor.mjs` | 精读建议（几何挑点 + 弹幕热区 + 语义切换点合并） |
+| `lib/stages.mjs` | 子命令编排（auto / grid / subs / refine / grab / local / ...） |
 | `test/` | `node:test` 单元测试；CI 见 `.github/workflows/ci.yml` |
 
 更多文档：
@@ -468,7 +479,7 @@ node fisheye.mjs selftest --deep # 含抽帧/字幕带实测的自检
 
 本项目仅用于**个人学习与研究**：
 
-- 请遵守 B 站《用户协议》，勿商用、勿批量抓取
+- 请遵守各平台《用户协议》，勿商用、勿批量抓取
 - 登录态 cookies 属于你的账号凭据，**泄露可能导致账号风险**
 - 视频与字幕版权归原作者与平台所有，工具输出仅供个人参考
 
@@ -493,6 +504,7 @@ Copyright (c) 2026 Derpyu520 and qq-bridge / QSH contributors）。
 | [whisper.cpp](https://github.com/ggml-org/whisper.cpp) | 音频转写（可选，`transcribe` / `--audio`） | MIT |
 | [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) | 图片文字识别（可选，`ocr`） | Apache-2.0 |
 | [yt-dlp](https://github.com/yt-dlp/yt-dlp) | 任意平台视频下载（可选，`url`） | Unlicense |
+| [fastembed](https://github.com/qdrant/fastembed) + [ruptures](https://github.com/deepcharles/ruptures) | 语义切分（可选，独立 Python 模块） | Apache-2.0 / BSD-2 |
 
 ### 思想来源
 

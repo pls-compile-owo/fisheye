@@ -1,7 +1,7 @@
 // danmaku 模块单测：广告段检测 / 热区摘要 / 过滤规则
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { AD_SEGMENT_SIGNAL, detectAdSegments, summarizeDanmaku } from '../lib/danmaku.mjs'
+import { AD_SEGMENT_SIGNAL, detectAdSegments, detectAdSegmentsCore, DEFAULT_KEYWORDS, summarizeDanmaku } from '../lib/danmaku.mjs'
 import { spamReason, filterDanmaku } from '../danmaku-filter.mjs'
 
 test('AD_SEGMENT_SIGNAL：命中广告关键词', () => {
@@ -32,6 +32,21 @@ test('detectAdSegments：密度低谷 + 广告词 → 识别出段', () => {
     assert.ok(s.ts.includes('-'))
     assert.ok(['high', 'low'].includes(s.confidence))
   }
+})
+
+test('detectAdSegmentsCore：无弹幕 + 字幕广告词 → 台词族标 high（confidence 修复）', () => {
+  const subs = [
+    { from: 10, content: '点击下方链接下单' },
+    { from: 15, content: '领取优惠券' },
+    { from: 20, content: '限时折扣' },
+  ]
+  const segs = detectAdSegmentsCore(
+    { danmaku: [], duration: 300, subtitles: subs },
+    DEFAULT_KEYWORDS,
+    ['sub-keywords'],
+  )
+  assert.ok(segs.length >= 1)
+  for (const s of segs) assert.equal(s.confidence, 'high')
 })
 
 test('summarizeDanmaku：空输入返回 null', () => {

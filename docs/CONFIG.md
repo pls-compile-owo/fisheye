@@ -32,6 +32,9 @@ $env:FFMPEG = "C:/tools/ffmpeg/bin/ffmpeg.exe"; node fisheye.mjs selftest
 FFMPEG=/usr/bin/ffmpeg node fisheye.mjs selftest
 ```
 
+| `SEMANTIC_CLI` | 语义切分 CLI 路径；默认用随包 `semantic/cli.py` |
+| `SEMANTIC_PYTHON` | 跑语义模块的 Python（需 `pip install -r semantic/requirements.txt`） |
+
 ## 配置文件
 
 `~/.config/fisheye/config.json`（Windows 上是 `C:\Users\<你>\.config\fisheye\config.json`）：
