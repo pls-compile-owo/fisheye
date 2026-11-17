@@ -2,6 +2,14 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.0.5] - 2026-11-18
+
+### Docs
+
+- README 标题改为 `fisheye · tokencut`（搜索关键词），README.en 同步。
+- GitHub About 描述与 Topics 更新（新增 tokencut / mcp / video-summary / whisper / danmaku / deepseek）。
+- npm keywords 补充 tokencut / video-summary / mcp / danmaku / deepseek，让 npm 搜索可命中。
+
 ## [1.0.4] - 2026-11-17
 
 ### Docs

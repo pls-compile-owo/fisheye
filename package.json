@@ -1,6 +1,6 @@
 {
   "name": "@pls-compile-owo/fisheye",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Token-budget-aware video understanding for AI agents: official subtitles -> burned-in subtitle band -> danmaku highlights -> adaptive keyframe grids -> targeted refine.",
   "type": "module",
   "bin": {
@@ -36,7 +36,12 @@
     "bilibili",
     "token-budget",
     "agent",
-    "keyframe"
+    "keyframe",
+    "tokencut",
+    "video-summary",
+    "mcp",
+    "danmaku",
+    "deepseek"
   ],
   "license": "MIT",
   "author": "fisheye contributors",
