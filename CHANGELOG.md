@@ -2,6 +2,14 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.0.8] - 2026-11-18
+
+### Docs
+
+- README 全量重写（中英）：修正过时路径（`src/cli.py` → `semantic/cli.py`）、移除已删的 `docs/EXPERIMENTS.md` 引用、补全测试数（176 + 51 弹幕用例）与广告真值（8 条）、token 常量（1200/1000/1300）。
+- 新增「可调参数与扩展点」章：广告检测三档（keywords / signals / detect）、弹幕过滤词表、预算模型、抽帧密度、语义切分外部 CLI 契约、精读阈值。
+- 输出产物表补 `-official-subs-translated.txt`；项目结构表补 `collect.mjs` / `planner.mjs` / `executor.mjs` / `selftest.mjs` / `dsh-plugin/`。
+
 ## [1.0.7] - 2026-11-18
 
 ### Fixed
