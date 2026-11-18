@@ -2,6 +2,12 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.0.21] - 2026-11-18
+
+### Docs
+
+- **把 token 实测表移到 README 最上面（「为什么」章）**，替换原来的估算表：开头直接给 5 类真实视频（30s 动画 / 130s 科技 / 14min 定格动画 / 37.6min 历史 / 57min 科技长视频）的输入 token 与 1 fps 基线对比，附字幕轨差（英文原文 vs 中文翻译 3.5 倍）。性能基准章只保留耗时/内存，不再重复 token 数据。
+
 ## [1.0.20] - 2026-11-18
 
 ### Docs
