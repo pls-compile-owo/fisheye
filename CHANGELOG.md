@@ -4,6 +4,28 @@ English: [CHANGELOG.en.md](./CHANGELOG.en.md)
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [2.0.1] - 2026-11-19
+
+### 修复
+
+- **fast 模式丢转写行**：whisper 转写（`transcript`）在 fast 档被丢弃，字幕降级链断在「官方 → 转写」之间。已闭合成四级：中文翻译轨 → 官方原文轨 → whisper 转写 → 烧录字幕带。
+- **字幕降级链**：新增纯函数 `selectSubsLines`（可单测），显式处理 `transcript` 来源；烧录字幕带仅在无文本字幕时兜底。
+
+### 文档
+
+- **全量审计**：修正各文档过时字段/常量/行为（README、DESIGN、REVIEW、dsh-plugin 文档、平台模板）。
+- **演示 GIF 重写**：`docs/demo-zh.gif` / `docs/demo-en.gif` 改为 2.0 流程（fast 文本 → 段卡片 → 按需 render）。
+- `CHANGELOG.en.md` 加入发布文件列表。
+
+### 打包
+
+- npm tarball 去掉 `test/samples/*.mp4`（减小体积）；`test/*.test.mjs` 用通配符收录，新增测试自动进包。
+- `package.json` 描述更新为 2.0 定位（token 预算感知、文本优先、按需渲染）。
+
+### Tests
+
+- 全量 **288 用例**（285 通过 + 3 跳过），新增 `test/auto-text.test.mjs`。
+
 ## [2.0.0] - 2026-11-18
 
 ### 本质变更

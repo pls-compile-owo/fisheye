@@ -3,6 +3,28 @@
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 中文版：[CHANGELOG.md](./CHANGELOG.md)
 
+## [2.0.1] - 2026-11-19
+
+### Fixed
+
+- **Fast mode dropped whisper transcript lines**: transcript lines were discarded in fast mode, breaking the subtitle fallback chain between "official" and "transcript". Now closed as four levels: translated track → official original track → whisper transcript → burned-in subtitle band.
+- **Subtitle fallback chain**: new pure function `selectSubsLines` (unit-testable) explicitly handles the `transcript` source; burned-in band is only used as a last resort when no text subtitles exist.
+
+### Docs
+
+- **Full audit**: corrected stale fields/constants/behaviors across README, DESIGN, REVIEW, dsh-plugin docs and platform templates.
+- **Demo GIFs rewritten**: `docs/demo-zh.gif` / `docs/demo-en.gif` now show the 2.0 flow (fast text → segment cards → on-demand render).
+- `CHANGELOG.en.md` added to published files.
+
+### Packaging
+
+- npm tarball no longer includes `test/samples/*.mp4` (smaller); `test/*.test.mjs` matched by glob so new tests ship automatically.
+- `package.json` description updated to the 2.0 positioning (token-budget-aware, text-first, on-demand rendering).
+
+### Tests
+
+- **288 tests** (285 pass + 3 skip), new `test/auto-text.test.mjs`.
+
 ## [2.0.0] - 2026-11-18
 
 ### Essence
