@@ -274,9 +274,9 @@ Marks: `✓` obtained / `△` poor quality / `○` skipped / `—` none. The sam
 
 | Way | Basis | Cost |
 |---|---|---|
-| `--template` | generate a template; the model reads the grids and fills in "which cells are unclear" | already paid (when reading the images) |
-| `--decisions <file>` | grab frames per the model's structured decisions | already paid |
-| no flags | **geometric fallback**: scene-change strength ≥0.85 + danmaku hotspots | 1024 tokens per picked moment |
+| `--template` | generate a template; the model reads the grids and fills in "which cells are unclear" | picking is 0 tokens; the grid read is already paid |
+| `--decisions <file>` | grab frames per the model's structured decisions | — (the judgment already happened in the model) |
+| no flags | **geometric fallback**: scene-change strength ≥0.85 + danmaku hotspots | **picking is 0 tokens** (pure computation); each grabbed full-res frame costs **1024 tokens when the model reads it** |
 
 > `refine` lists the moments and then grabs them directly. To only see suggestions, use `refine --template` — it writes the template and grabs nothing.
 
