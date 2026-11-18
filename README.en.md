@@ -337,6 +337,21 @@ The plugin only *reads* videos (grids, subtitles, danmaku evidence); summaries b
 
 **Takeaway**: the cost of a 40-minute video is almost entirely scene detection (one full 320p decode). Frame grabbing, grids, semantic splitting and subtitle-band detection are all seconds.
 
+### Measured token cost (same 40-minute video)
+
+| Mode | Composition | Actual tokens |
+|---|---|---|
+| 1 fps sampling (baseline) | 2400 frames × ~250 | **≈ 600,000** |
+| fisheye · full subtitles (English AI track) | subtitles 49,757 + grid 1,200 + close-up reserve 2,600 | **≈ 53,557** |
+| fisheye · full subtitles (Chinese translation track) | subtitles 11,615 + grid 1,200 + close-up reserve 2,600 | **≈ 15,415** |
+| fisheye · pixels only (no subtitles) | grid 1,200 + close-up reserve 2,600 | **≈ 3,800** |
+| one close-up | full-resolution frame | ≈ 1,300 / point |
+
+**Takeaways**
+
+- vs the 1 fps baseline, fisheye saves **11× to 158×** tokens depending on mode.
+- Same video: reading the English original costs 54k tokens (over a 20k budget); reading Bilibili's Chinese translation track costs **15k** — preferring the translated track is what gets a 40-minute video under a 20k budget.
+- Grid cost (1,200) and close-up reserve (2,600) are fixed overhead; subtitles dominate — which is why "subtitles first, pixels only if needed" is the cheapest order.
 ### Other hardware (not measured — no made-up numbers)
 
 No data outside this machine. In order of impact:
