@@ -149,7 +149,7 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 
 ### Fixed
 
-- **Privacy cleanup**: removed the `.dsh/surfcore/whisper/Release` probe candidate from `lib/audio.mjs`; removed local-machine paths from comments in `lib/ocr.mjs` / `lib/ytdlp.mjs`; `docs/make-demo-*.py` default paths now come from env/temp dirs (no absolute paths containing usernames). SurfCore attribution in the README stays (open-source derivation credit).
+- **Privacy cleanup**: removed a whisper probe candidate in `lib/audio.mjs` that pointed at a developer-machine tool directory (not a standard install location); removed local paths from comments in `lib/ocr.mjs` / `lib/ytdlp.mjs`; `docs/make-demo-*.py` default paths now come from env/temp dirs (no absolute paths containing usernames). SurfCore attribution in the README stays (open-source derivation credit).
 
 ## [1.0.6] - 2026-11-18
 

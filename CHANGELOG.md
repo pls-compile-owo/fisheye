@@ -4,6 +4,12 @@ English: [CHANGELOG.en.md](./CHANGELOG.en.md)
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.0.24] - 2026-11-18
+
+### Docs
+
+- **隐私清理日志自身去路径**：1.0.7 条目原先把被移除的本机目录路径（`.dsh/surfcore/whisper/Release`）又写进了 CHANGELOG，等于在"清理日志"里二次暴露。中英两版都改为抽象描述（"指向开发者本机工具目录的探测候选，不是任何标准安装位置"）。
+
 ## [1.0.23] - 2026-11-18
 
 ### Docs
@@ -157,7 +163,7 @@ English: [CHANGELOG.en.md](./CHANGELOG.en.md)
 
 ### Fixed
 
-- **隐私清理**：`lib/audio.mjs` 移除 `.dsh/surfcore/whisper/Release` 探测候选，`lib/ocr.mjs`/`lib/ytdlp.mjs` 注释去掉本机路径；`docs/make-demo-*.py` 默认路径改为环境变量/临时目录（不再含用户名绝对路径）。README 中的 SurfCore 署名保留（开源衍生致谢）。
+- **隐私清理**：移除 `lib/audio.mjs` 中指向开发者本机工具目录的 whisper 探测候选（那不是任何标准安装位置），`lib/ocr.mjs`/`lib/ytdlp.mjs` 注释去掉本机路径；`docs/make-demo-*.py` 默认路径改为环境变量/临时目录（不再含用户名绝对路径）。README 中的 SurfCore 署名保留（开源衍生致谢）。
 
 ## [1.0.6] - 2026-11-18
 
