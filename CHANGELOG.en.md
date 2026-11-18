@@ -3,6 +3,33 @@
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 中文版：[CHANGELOG.md](./CHANGELOG.md)
 
+## [1.0.29] - 2026-11-18
+
+### Changed
+
+- **Ad-detection tuning (high-confidence precision 16%→60%)**: removed 「同款」 from the keyword set (a danmaku meme, not an ad, and a frequent cross-partition false positive); narrowed the `buy` backtrace 120s→60s (the old window pulled normal content into ad spans); narrowed the density-valley merge window 20s→10s (aligned with stepSec for tighter bounds).
+
+### Added
+
+- **Partition keyword library** (`lib/signals/partitions.mjs`): per-partition ad-keyword downgrades keyed by Bilibili `tid_v2` — tech strips 「商单/赞助/下单」 (mostly banter in gadget reviews; real ads hit via 「感谢金主/接广」); auto strips 「赞助」 (sponsors are the content in F1-style events). `resolveKeywords(tidV2)` does a field-level merge and falls back to the default set for unknown partitions (zero regression); the bilibili adapter injects it via `adDetector.resolveKeywords`.
+- **Ad-segment semantic arbitration hook** (`lib/signals/semantic.mjs`): `arbitrateAdSegments(segments, ctx, judge)` calls an external judge only on "undecided" segments (low segments, or high segments with ≤1 keyword hit) and rewrites confidence. The judge is injected via `adDetector.semanticJudge`; when absent there is zero overhead. Semantic judgment is an "arbiter", not a "signal source" — it never changes deterministic signal output, and a failing/misbehaving judge at worst mislabels confidence.
+
+### Tests
+
+- Added `test/partitions.test.mjs` (partition keywords) and `test/ad-semantic.test.mjs` (semantic arbitration hook).
+- Pinned the 21 hand-labeled ad truths into `test/golden/ad-truth/` (12 ad + 9 no-ad, each with `tid_v2` for partition-keyword detection) and fixed the historical GBK mojibake in golden danmaku (regenerated from the normal UTF-8 cache). Golden tests now detect with the partition keyword library; the no-ad assertion became "no high segment" (low segments are low-engagement hints, not ads); the 3 "sudden / single-keyword" hard cases are marked `hardCase` and skip the coverage requirement (left to semantic recognition). 244 cases pass with zero regression.
+
+## [1.0.28] - 2026-11-18
+
+### Fixed
+
+- **Privacy fix**: `tools/bench.ps1` no longer hard-codes local paths (username + absolute ffmpeg/credential paths). It now resolves the repo root via `$Repo = Split-Path -Parent $PSScriptRoot`, uses `node` from PATH, and lets fisheye probe ffmpeg/credentials itself. This was missed by the 1.0.7 privacy cleanup and only the changelog text was de-pathed in 1.0.24-1.0.25 — the script itself was left behind.
+
+### Docs
+
+- README project-structure table (ZH/EN) now lists the missing subdirectories: `tools/`, `docs/`, `.github/`, `test/golden/` (fixtures/ad-truth), `semantic/requirements.txt`; the Chinese table also gained `lib/trace.mjs`.
+- `docs/REVIEW.md` (ZH/EN) gained an "External audit record" section: a README-claims-vs-source independent audit (verdict evolution, what it got right, six problems and their resolution, deliberately-kept trade-offs), plus a 2026-11-18 row in the review-history table.
+
 ## [1.0.27] - 2026-11-18
 
 ### Docs

@@ -638,8 +638,11 @@ Project structure:
 | `lib/selftest.mjs` | selftest implementation |
 | `lib/trace.mjs` | debug trace (`FISHEYE_TRACE`) |
 | `dsh-plugin/` | DSH plugin wrapper (`video_understand` tool) |
-| `semantic/cli.py` | semantic reference implementation (fastembed + ruptures) |
-| `test/` | `node:test` unit tests; CI in `.github/workflows/ci.yml` |
+| `semantic/` | semantic reference implementation (`cli.py` + `requirements.txt`, fastembed + ruptures) |
+| `test/` | `node:test` unit tests + golden suite (`fixtures/` / `ad-truth/`) + integration/degradation |
+| `tools/` | benchmark script (`bench.ps1`: per-stage time + peak memory) |
+| `docs/` | design/config/review docs (ZH/EN) + demo GIFs + demo-generation scripts |
+| `.github/` | CI workflow (`ci.yml`) + issue template |
 
 More docs (English): [`docs/DESIGN.en.md`](docs/DESIGN.en.md) (decisions and tradeoffs), [`docs/CONFIG.en.md`](docs/CONFIG.en.md) (configuration and troubleshooting), [`docs/REVIEW.en.md`](docs/REVIEW.en.md) (verification checklist), [`CHANGELOG.en.md`](CHANGELOG.en.md) (full changelog). Chinese originals are next to each file.
 

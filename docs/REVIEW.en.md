@@ -137,6 +137,43 @@ Hard requirements:
 
 | Date | Scope | Found | Resolution |
 |---|---|---|---|
-| 2026-11-11 | first release review | to fill | to fill |
+| 2026-11-11 | first release review | zero unit tests, hard-coded paths, concurrent cleanup deleting wrong files | fixed (tests from 0.3.0, de-pathed in 1.0.7) |
+| 2026-11-18 | README claims vs source + full CHANGELOG audit | see "External audit record" below | all four debts closed (1.0.10–1.0.14) |
 
 > Update this table after each review: what was found, what was changed, what was left.
+
+---
+
+## 6. External audit record (2026-11-18)
+
+> An independent "README claims vs source" audit. The audit landed on 1.0.8; status below is updated through the current version.
+
+### How the verdict evolved
+
+- **First verdict**: a Bilibili-specialized generic framework — the adapter contract is right, but ~80% of the intelligence is bound to Bilibili: `lib/bili.mjs` is the heaviest module, four ad signals depend on danmaku, local/URL degrade to a "fancy frame sampler".
+- **Updated verdict**: a Bilibili-first, architecturally generalizable token-budget video-understanding engine — the adapter contract + signal registry + independent collection layer are already generalization-ready; functionally Bilibili is still the only "full-feature" platform. That's a "perfect one platform first, then generalize" priority choice, not a defect.
+
+### What it got right
+
+- **Token budget through the whole pipeline**: `planAuto` splits the budget into subtitles/transcript + grids + refine reserve; per-grid cost is area-corrected (not a hard-coded 1200); `estimateTokens` goes through `budget.mjs` with `FISHEYE_TOKEN_MODEL`.
+- **Even skeleton + snap to change points**: bases spread over effective duration, snap window `half`, dedup floor `0.4×half`, threshold ladder `[0.3, 0.15, 0.08]` picking the first ≥75% snap tier, ad segments compressed before re-spreading.
+- **Subtitle-band detection really dropped Python**: `lib/band.mjs` uses ffmpeg P5 grayscale PGM + pure-JS gradient/percentile/peak, numpy/Pillow semantics aligned, plus a vertical-video over-height fallback.
+- **Honest multi-source layering**: official subtitles (WBI-signed, `assessSubtitleQuality` noise rejection) → whisper transcription → burnt-in band → frames, the priority is realized in code.
+- **Danmaku as a third signal**: `summarizeDanmaku` buckets by 5s, hotspots join frame snapping (score 0.9, below real scene changes).
+
+### Problems found and their resolution
+
+| Problem | Resolution | Version |
+|---|---|---|
+| Ad detection is heuristic voting, signals hard-coded in `detectAdSegmentsCore` | pluggable signal sources (`lib/signals/` registry, seven signals split into primary/secondary/subtitle) | 1.0.10 |
+| Non-Bilibili videos degrade to a frame sampler; `local`/`url` don't use the unified collection | `local`/`url --smart` runs the full pipeline | 1.0.11 |
+| Silent errors: try/catch swallows failures, output quietly missing pieces | coverage summary + manifest `coverage` field | 1.0.12 |
+| Semantic segmentation had no quantitative metric ("acknowledged but unfixed") | synthetic-sample recall/precision baseline (`test/semantic-core.test.mjs`) | 1.0.13 |
+| Refine geometric thresholds hard-coded (`scene >= 0.85`, `slice(0,8)`) | `MIN_SCENE_INTENSITY`/`MAX_PICKS` parametrized + env vars | 1.0.14 |
+| README claims mismatch code (platform capability table, semantic description, dev command, structure table missing subdirs, `bench.ps1` hard-coded paths) | README audit fixes + privacy fix | 1.0.15 / 1.0.26 / 1.0.28 |
+
+### Deliberately kept trade-offs
+
+- **Swapping ad detection for a lightweight classifier**: needs a model runtime, breaks zero-npm-dependency; the signal registry already leaves the slot.
+- **Defaulting semantic segmentation to embedding**: conflicts with "dropping Python"; currently "pure-JS fallback + optional embedding boost".
+- **Temp-file storm from sandbox constraints**: subprocesses can't capture pipes, data flows through temp files — the DSH-sandbox-prescribed solution; correct, but a rough IO pattern.

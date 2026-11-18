@@ -1,6 +1,8 @@
 node_modules/
 cache/
 out/
+.ad-cache/
+*.tgz
 *.mp4
 *.part
 credentials.json

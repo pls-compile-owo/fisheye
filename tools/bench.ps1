@@ -1,14 +1,13 @@
-﻿# fisheye benchmark: per-stage time + peak memory
+# fisheye benchmark: per-stage time + peak memory
 # usage: pwsh -File tools/bench.ps1
 # requires: cache/<id>.mp4 present (run auto once), ffmpeg available
 param(
   [string]$Id = 'BV1WhaA6hE7s',
-  [string]$Repo = 'C:\Users\Marsw\Documents\deepseek-harness\fisheye-publish\fisheye'
+  [string]$Repo = (Split-Path -Parent $PSScriptRoot)
 )
 $ErrorActionPreference = 'Stop'
-$env:FFMPEG = 'C:\Users\Marsw\.dsh\surfcore\bili\bin\ffmpeg.exe'
-$env:BILI_CRED = 'C:\Users\Marsw\.dsh\surfcore\bili\credentials.json'
-$node = 'C:\Program Files\nodejs\node.exe'
+# 不硬编码任何本机路径：node 走 PATH，ffmpeg / 凭证由 fisheye 自己探测（环境变量 → config.json → PATH）
+$node = 'node'
 
 function Sample-TreePeak($rootPid) {
   # sample peak WorkingSet of the process tree

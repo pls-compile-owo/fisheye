@@ -4,6 +4,33 @@ English: [CHANGELOG.en.md](./CHANGELOG.en.md)
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.0.29] - 2026-11-18
+
+### Changed
+
+- **广告检测调参（高置信度段精确率 16%→60%）**：关键词库去掉「同款」（「同款键盘/同款砧板」是弹幕梗非广告，跨分区高频误报）；`buy` 消费回溯窗口 120s→60s（原窗口把正常内容也回溯进广告段）；密度低谷合并窗口 20s→10s（对齐 stepSec，段边界更准）。
+
+### Added
+
+- **分区词库**（`lib/signals/partitions.mjs`）：按 B站 `tid_v2` 粗分区动态降级广告词——科技区去掉「商单/赞助/下单」（数码评测里多是调侃/感叹，真广告靠「感谢金主/接广」命中）；汽车区去掉「赞助」（F1 等赛事里赞助商是内容本身）。`resolveKeywords(tidV2)` 字段级合并，未命中分区返回默认词库（零回归）；bilibili 适配器经 `adDetector.resolveKeywords` 注入。
+- **广告段语义仲裁插槽**（`lib/signals/semantic.mjs`）：`arbitrateAdSegments(segments, ctx, judge)` 对「悬而未决」段（low 段 / 仅 1 次关键词命中的 high 段）调用外部 judge 二次判定、改写 confidence。judge 由 `adDetector.semanticJudge` 注入，不提供则零开销。语义判定定位为「仲裁器」而非「信号源」——不改变确定性信号产出，judge 挂了/乱判最坏只标错置信度。
+
+### Tests
+
+- 新增 `test/partitions.test.mjs`（分区词库）、`test/ad-semantic.test.mjs`（语义仲裁插槽）。
+- 人工标注的 21 条广告真值固化进 `test/golden/ad-truth/`（12 真广告 + 9 无广告，含 `tid_v2` 供分区词库检测），并修复历史 golden 的弹幕 GBK 乱码（用正常 UTF-8 缓存重生成）。golden 测试改用分区词库检测；无广告断言改为「无 high 段」（low 段是低互动提示非广告）；「猝不及防 / 单关键词」3 条难例标记 `hardCase` 不强制 coverage（留给语义识别）。全量 244 用例零回归。
+
+## [1.0.28] - 2026-11-18
+
+### Fixed
+
+- **隐私修复**：`tools/bench.ps1` 移除硬编码的本机路径（用户名 + ffmpeg/凭证绝对路径），改为 `$Repo = Split-Path -Parent $PSScriptRoot` 自动定位项目根、node 走 PATH、ffmpeg/凭证交 fisheye 自行探测。这是 1.0.7 隐私清理遗漏、1.0.24-1.0.25 只清 changelog 文本未清本体的漏网。
+
+### Docs
+
+- README 项目结构表补全遗漏的子目录（中英）：`tools/`、`docs/`、`.github/`、`test/golden/`（fixtures/ad-truth）、`semantic/requirements.txt`；中文版补 `lib/trace.mjs`。
+- `docs/REVIEW.md`（中英）新增「外部审计记录」章节：整理一次 README 宣称 vs 源码的独立审计结论（定位演进、做对的部分、六个问题与处理、刻意保留的权衡），评审历史表补 2026-11-18 一行。
+
 ## [1.0.27] - 2026-11-18
 
 ### Docs

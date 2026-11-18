@@ -639,9 +639,13 @@ node fisheye.mjs selftest --deep         # 含抽帧/字幕带/OCR/转写/语义
 | `lib/executor.mjs` | 精读建议（几何挑点 + 弹幕热区 + 语义切换点合并） |
 | `lib/stages.mjs` | 子命令编排（auto / grid / subs / refine / grab / local / ...） |
 | `lib/selftest.mjs` | 自检实现 |
+| `lib/trace.mjs` | 调试 trace（`FISHEYE_TRACE`） |
 | `dsh-plugin/` | DSH 插件包装（`video_understand` 工具） |
-| `semantic/cli.py` | 语义切分参考实现（fastembed + ruptures） |
-| `test/` | `node:test` 单元测试；CI 见 `.github/workflows/ci.yml` |
+| `semantic/` | 语义切分参考实现（`cli.py` + `requirements.txt`，fastembed + ruptures） |
+| `test/` | `node:test` 单元测试 + golden 验收集（`fixtures/` / `ad-truth/`）+ 集成/退化测试 |
+| `tools/` | 基准脚本（`bench.ps1`：分阶段耗时 + 峰值内存） |
+| `docs/` | 设计/配置/评审文档（中英）+ 演示 GIF + demo 生成脚本 |
+| `.github/` | CI 工作流（`ci.yml`）+ issue 模板 |
 
 更多文档：
 
