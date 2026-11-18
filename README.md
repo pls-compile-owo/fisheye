@@ -545,6 +545,27 @@ node fisheye.mjs auto BV1xxx --budget 20000
 - **长视频成本高**：40 分钟中文视频官方字幕约 1.2 万 token（英文 AI 字幕更多，可到 5 万）
 - **B 站接口会变**：`selftest` 能帮你快速定位是哪个环节挂了
 
+### 调试 trace（`FISHEYE_TRACE=1`）
+
+排查「慢在哪 / 为什么跳过某个信号源」时打开 trace：
+
+```bash
+FISHEYE_TRACE=1 node fisheye.mjs auto BV1xxx --budget 20000
+# → out/<id>-trace.json：每个采集阶段的耗时（download / scene-detect / subtitles / transcribe /
+#   subtitle-band / danmaku / ad-detection / semantic），失败阶段带 error 字段
+```
+
+trace 只写文件与 stderr，不污染 stdout 的结果输出；不开启时零开销。配合 `FISHEYE_DEBUG=1` 可在致命错误时打印堆栈。
+
+### 测试
+
+```bash
+node --test --test-concurrency=1 test/          # 单元 + golden + 集成 + 退化场景（211 用例）
+node --test test/integration.test.mjs           # 真实 CLI 端到端（local / --smart + trace / selftest / clean）
+node --test test/degradation.test.mjs           # 退化场景：无 ffmpeg / 坏文件 / 坏参数 / 坏 manifest
+```
+
+退化场景用例断言的是「清晰报错 + 非零退出码 + 不抛未捕获栈」——防止缺依赖或坏输入时静默假成功。
 ## 开发
 
 ```bash

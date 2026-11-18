@@ -2,6 +2,18 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.0.17] - 2026-11-18
+
+### Added
+
+- **调试 trace（`FISHEYE_TRACE=1`）**：新增 `lib/trace.mjs`，`auto`/`local --smart` 采集阶段逐项计时（download / scene-detect / subtitles / transcribe / subtitle-band / danmaku / ad-detection / semantic），写 `out/<id>-trace.json` + stderr 一行摘要；默认零开销，不污染 stdout。
+- **集成测试** `test/integration.test.mjs`（4 用例）：真实 CLI 端到端——local 抽帧、local --smart + trace 阶段齐全、selftest、clean dry-run/--yes。
+- **退化场景评估** `test/degradation.test.mjs`（9 用例）：无 ffmpeg（隔离 HOME 避免 config 干扰）、文件不存在、损坏视频、空文件、非法 BV、非法参数、损坏 manifest、未知命令——断言「清晰报错 + 非零退出 + 不抛未捕获栈」。
+
+### Tests
+
+- 全量 211 用例（208 通过 + 3 跳过）。
+
 ## [1.0.16] - 2026-11-18
 
 ### Added

@@ -364,6 +364,27 @@ Post the numbers in an issue and this table will be updated.
 - Long videos cost real tokens: ~12k tokens for a 40-minute Chinese subtitle track (AI English subtitles can reach ~50k).
 - Bilibili APIs change; `selftest` tells you which piece broke.
 
+### Debug trace (`FISHEYE_TRACE=1`)
+
+Use trace when you need to know where time went or why a signal source was skipped:
+
+```bash
+FISHEYE_TRACE=1 node fisheye.mjs auto BV1xxx --budget 20000
+# → out/<id>-trace.json: per-stage timings (download / scene-detect / subtitles / transcribe /
+#   subtitle-band / danmaku / ad-detection / semantic), with an error field on failures
+```
+
+Trace writes to a file and stderr only — stdout (the machine-readable result) is untouched, and it costs nothing when disabled. Combine with `FISHEYE_DEBUG=1` to print stacks on fatal errors.
+
+### Tests
+
+```bash
+node --test --test-concurrency=1 test/          # unit + golden + integration + degradation (211 cases)
+node --test test/integration.test.mjs           # real CLI end-to-end (local / --smart + trace / selftest / clean)
+node --test test/degradation.test.mjs           # degradation: missing ffmpeg / broken file / bad args / bad manifest
+```
+
+Degradation cases assert a clear error, a non-zero exit code, and no uncaught stack — so missing deps or bad input never look like success.
 ## Development
 
 ```bash

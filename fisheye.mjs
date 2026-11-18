@@ -23,6 +23,7 @@ import { parseTime, num, pageNum, gridStr } from './lib/util.mjs'
 import { t } from './lib/i18n.mjs'
 import { stageAuto, stageGrid, stageSubs, stageSelftest, stageRefine, stageGrab, stageLocal, stageTranscribe, stageClean, stageOcr, stageUrl, stageBatch } from './lib/stages.mjs'
 import { resolveSource } from './lib/platforms/index.mjs'
+import { traceStart, traceFinish } from './lib/trace.mjs'
 
 const argv = process.argv.slice(2)
 const stage = argv[0]
@@ -47,6 +48,9 @@ const opt = (name, dflt) => {
 
 // auto 决策管线（完整采集：多路信号 + 字幕带 + 广告 + 语义）。local/url 的 --smart 与 auto 共用。
 async function runAuto(source) {
+  traceStart(source.id)
+  let ok = false
+  try {
   const d = opt('density', null)
   await stageAuto(source,
     num(opt('budget', 20000), 'budget', { min: 2000, max: 200000 }),
@@ -61,6 +65,10 @@ async function runAuto(source) {
       resume: argv.includes('--resume'),
       force: argv.includes('--force'),
     })
+    ok = true
+  } finally {
+    traceFinish(ok)
+  }
 }
 
 // 需要「平台源」的命令：解析输入（BV / 文件 / URL）→ VideoSource 契约对象
