@@ -55,8 +55,8 @@ fisheye 2.0 = 把 B站/本地/URL 视频压成「**证据 + 成本**」，判断
 | **第 0 批验证**（5 项） | ✅ 全部通过 |
 | **第 1 批实现**（字幕+弹幕+切段，纯文本） | ✅ 完成，审查通过 |
 | **第 2 批实现**（画面三轨 + 类型判定 + 按需渲染） | ✅ 完成，审查通过（P1 已修） |
-| 第 3 批（广告重构） | ⏳ 待做（可进） |
-| 第 4 批（文档 + 发布） | ⏳ 待做 |
+| **第 3 批实现**（广告重构） | ✅ 完成，审查通过（P1 已修） |
+| **第 4 批**（文档 + 发布） | ✅ 完成（CHANGELOG/README/DESIGN/REVIEW + 2.0.0） |
 
 ## 六、批次审查结论
 
@@ -115,6 +115,8 @@ fisheye 2.0 = 把 B站/本地/URL 视频压成「**证据 + 成本**」，判断
 ## 九、git 状态（本地未推送）
 
 累计提交（`git log`，HEAD 在最新）：
+- `723ec01` docs(release): 2.0.0 changelog + docs sync + reprice 1024 + bump
+- `1eb4512` feat: 2.0 core + ad refactor（第 1~3 批代码）
 - `d6eedee` fix(skill): prices 348→1024
 - `000b293` docs: reprice 348→1024 + 变更记录
 - `40b13cc` docs: batch-0 验证结论 + handoff
@@ -123,4 +125,4 @@ fisheye 2.0 = 把 B站/本地/URL 视频压成「**证据 + 成本**」，判断
 - `fd5a4fb` docs: 拆分 11 模块
 - 更早 5 个（docs/工具/bili fix/1.0.29）
 
-第 1、2 批代码（subs-digest/emotion/segments/auto-text/tracks/video-type/render + 6 测试 + collect/fisheye 改动）**尚未提交**（git status 有 M/??）。
+**全部批次已提交，工作区干净**（HEAD `723ec01`，版本 2.0.0）。npm 发布 / 桌面合集更新 / dsh-plugin 发布未执行（需用户授权，见第 4 批验收）。
