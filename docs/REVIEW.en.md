@@ -18,7 +18,7 @@ node --check lib/semantic-core.mjs
 
 # 2. unit tests
 node test-danmaku-filter.js          # 51 assertions
-node --test --test-concurrency=1 test/   # unit + golden + integration + degradation
+node --test test/                    # unit + golden + integration + degradation (288 cases)
 
 # 3. self-check (dependencies / credentials / APIs / cache / disk)
 node fisheye.mjs selftest
@@ -156,8 +156,8 @@ Hard requirements:
 
 ### What it got right
 
-- **Token budget through the whole pipeline**: `planAuto` splits the budget into subtitles/transcript + grids + refine reserve; per-grid cost is area-corrected (not a hard-coded 1200); `estimateTokens` goes through `budget.mjs` with `FISHEYE_TOKEN_MODEL`.
-- **Even skeleton + snap to change points**: bases spread over effective duration, snap window `half`, dedup floor `0.4×half`, threshold ladder `[0.3, 0.15, 0.08]` picking the first ≥75% snap tier, ad segments compressed before re-spreading.
+- **Token budget through the whole pipeline**: `planAuto` splits the budget into subtitles/transcript + grids + refine reserve; per-image cost is a uniform **1024** (2.0 pricing: independent of dimensions); `estimateTokens` goes through `budget.mjs` with `FISHEYE_TOKEN_MODEL`.
+- **Even skeleton + snap to change points**: bases spread over effective duration, snap window `half`, dedup floor `0.4×half`, single-tier snap **0.3** (0.2 verified the three-tier ladder is unnecessary), low-activity spans **down-weighted w=0.3** (not skipped).
 - **Subtitle-band detection really dropped Python**: `lib/band.mjs` uses ffmpeg P5 grayscale PGM + pure-JS gradient/percentile/peak, numpy/Pillow semantics aligned, plus a vertical-video over-height fallback.
 - **Honest multi-source layering**: official subtitles (WBI-signed, `assessSubtitleQuality` noise rejection) → whisper transcription → burnt-in band → frames, the priority is realized in code.
 - **Danmaku as a third signal**: `summarizeDanmaku` buckets by 5s, hotspots join frame snapping (score 0.9, below real scene changes).

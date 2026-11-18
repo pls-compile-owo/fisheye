@@ -17,9 +17,9 @@ node --check fisheye.mjs
 node --check lib/band.mjs
 node --check lib/semantic-core.mjs
 
-# 2. 单元测试（弹幕过滤 51 断言 + 全量 211 用例：单元/golden/集成/退化）
+# 2. 单元测试（弹幕过滤 51 断言 + 全量 288 用例：单元/golden/集成/退化）
 node test-danmaku-filter.js
-node --test --test-concurrency=1 test/
+node --test test/
 
 # 3. 自检（依赖/凭证/API/缓存/磁盘）
 node fisheye.mjs selftest
@@ -158,8 +158,8 @@ node fisheye.mjs auto BV1i4W86zEUS --budget 30000   # 长视频全流程
 
 ### 确认做对了的部分
 
-- **Token 预算贯穿全链路**：`planAuto` 纯函数把预算拆成字幕/转写 + 拼图 + 精读预留三块，单张拼图成本按画面面积修正（非写死 1200），`estimateTokens` 走 `budget.mjs`，支持 `FISHEYE_TOKEN_MODEL` 系数切换。
-- **等间隔骨架 + 吸附变化点**：基准点按有效时长铺、吸附窗口 `half`、去重下限 `0.4×half`、阈值阶梯 `[0.3, 0.15, 0.08]` 取首个 ≥75% 吸附档、广告段先压缩再均分。
+- **Token 预算贯穿全链路**：`planAuto` 纯函数把预算拆成字幕/转写 + 拼图 + 精读预留三块，单张图片成本统一 **1024**（2.0 口径：与尺寸无关），`estimateTokens` 走 `budget.mjs`，支持 `FISHEYE_TOKEN_MODEL` 系数切换。
+- **等间隔骨架 + 吸附变化点**：基准点按有效时长铺、吸附窗口 `half`、去重下限 `0.4×half`、单档吸附 **0.3**（0.2 验证砍掉三档阶梯）、低活跃段 **降权 w=0.3**（非跳过）。
 - **字幕带检测真的去掉了 Python**：`lib/band.mjs` 用 ffmpeg P5 灰度 PGM + 纯 JS 梯度/分位/峰值，numpy/Pillow 语义对齐，还处理了竖屏字幕带过高的兜底。
 - **多路信号分层诚实**：官方字幕（WBI 签名，`assessSubtitleQuality` 判噪声）→ whisper 转写 → 烧录字幕带 → 画面，优先级在代码里兑现。
 - **弹幕是第三信息源**：`summarizeDanmaku` 按 5s 桶聚合，热区参与取帧吸附（score 0.9，低于真实画面变化）。

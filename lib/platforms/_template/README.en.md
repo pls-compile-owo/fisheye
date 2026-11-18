@@ -19,7 +19,7 @@ Copy this directory → rename → fill `match` + `createSource` → register. A
 | `media(pageNo=1)` | local mp4 path | download / locate |
 | `subtitles(range)` | `{ body: [{from, content}], quality }` or `null` | official subtitles |
 | `danmaku(range)` | `[{t, text}]` or `null` | danmaku / interaction |
-| `adDetector` | `{ keywords, signals }` or `null` | ad detection (platform-tuned) |
+| `adDetector` | `{ adKeywords }` or `null` | ad-keyword evidence (platforms only declare what they can offer; which signals to use is fisheye's call) |
 
 ## Key conventions
 

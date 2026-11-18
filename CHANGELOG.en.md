@@ -20,6 +20,8 @@ fisheye changes from "read everything + full subtitles" (~51k~95k tokens for a 4
 
 **New modules**: `lib/subs-digest.mjs` (four digest laws + fact/op dual channel + compressibility), `lib/emotion.mjs` (dual emotion scores + quantile + √ compression + top samples), `lib/segments.mjs` (4-min segmentation + segment cards with second-level timestamps), `lib/tracks.mjs` (coarse/algorithm/adaptive tracks + single-tier snap + w=0.3 down-weight), `lib/video-type.mjs` (music/slides/screen/foreign typing), `lib/render.mjs` (render --plan lazy rendering), `lib/auto-text.mjs` (fast text mode).
 
+**Subtitle fallback chain closed (4 tiers)**: translated → official original → whisper transcript → burnt-in band (`source: 'band'`; band image not rendered by default). The pure function `selectSubsLines` is unit-testable.
+
 **manifest**: `schemaVersion: 2`; `adSegments` → `lowActivitySegments` + `adKeywordHits`; old manifests (schemaVersion 1) are explicitly rejected with a "re-run auto" hint.
 
 **auto defaults to fast**: skips full-video scene detection (<5s, cache hit); `--standard` keeps the old framing path (full collection + grids).
@@ -35,7 +37,7 @@ fisheye changes from "read everything + full subtitles" (~51k~95k tokens for a 4
 
 ### Tests
 
-- Full **279 cases** (276 pass + 3 skip), baseline 242 → 279. danmaku-filter 51/51.
+- Full **288 cases** (285 pass + 3 skip), baseline 242 → 288. danmaku-filter 51/51.
 
 ## [1.0.29] - 2026-11-18
 

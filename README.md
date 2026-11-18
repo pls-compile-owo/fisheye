@@ -56,7 +56,7 @@ node fisheye.mjs auto https://... --budget 20000     # 任意 URL（yt-dlp）
 | 优先级 | 信息源 | 成本 | 什么时候用 |
 |---|---|---|---|
 | ① | **官方字幕**（CC 字幕轨，优先 AI 中文字幕） | 几百 ~ 几万 token | 视频有字幕时——文本比图便宜一个数量级 |
-| ② | **烧录字幕带**（字幕烧进画面） | ~1000 token | 无官方字幕但画面底部有字幕 |
+| ② | **烧录字幕带**（字幕烧进画面） | ~1024 token | 无官方字幕但画面底部有字幕 |
 | ③ | **弹幕热区**（观众反应，B 站） | ~100 token | 找观众最激动的时间点，**画面和字幕都看不出这个** |
 | ④ | **画面拼图**（3×3 网格） | 1024 token/张 | 兜底：真正需要看画面时 |
 | ⑤ | **语义切分**（话题切换点，可选） | 零 token | 识别视频在哪个时间点换了话题/段落，喂精读建议 |
@@ -125,8 +125,10 @@ python3 -c "import fastembed, ruptures"     # 自检用同一解释器验证，�
 | 变量 | 说明 |
 |---|---|
 | `FISHEYE_LANG` | CLI 输出语言：`zh`（默认）/ `en` |
-| `FISHEYE_TOKENS_PER_GRID` / `FISHEYE_TOKENS_PER_SUBS` / `FISHEYE_TOKENS_PER_FINE` | 单张拼图 / 字幕带 / 精读帧的 token 估算覆盖（默认 1024 / 1000 / 1024） |
-| `FISHEYE_TOKEN_MODEL` | 按模型 tokenizer 修正估算：`gpt`（1.0）/ `qwen`（1.35）/ `gemini`（0.8）/ 数字 |
+| `FISHEYE_TOKENS_PER_GRID` / `FISHEYE_TOKENS_PER_SUBS` / `FISHEYE_TOKENS_PER_FINE` | 单张拼图 / 字幕带 / 精读帧的 token 估算覆盖（默认 1024 / 1024 / 1024） |
+| `FISHEYE_TOKEN_MODEL` | 按模型 tokenizer 修正估算：`gpt`（1.08）/ `qwen`（1.27）/ `gemini`（0.25）/ `claude`（1.56）/ 数字 |
+| `FISHEYE_VISUAL_TRACK` | 视觉授权三档：`on` / `ask`（默认）/ `off` |
+| `FISHEYE_LOW_ACTIVITY_WEIGHT` | 低活跃段降权系数（默认 0.3，仅 render 的 algorithm 轨） |
 | `FISHEYE_WHISPER` / `FISHEYE_WHISPER_MODEL` | whisper 可执行文件 / 模型（ggml-*.bin，可选） |
 | `FISHEYE_HOME` | 数据目录（cache/out 位置，默认项目目录） |
 | `SEMANTIC_CLI` / `SEMANTIC_PYTHON` | 语义切分 CLI / 跑它的 Python（默认用随包的 `semantic/cli.py`） |
@@ -189,35 +191,41 @@ node fisheye.mjs grab BV1ziWP6qENy 82.5,145.0
 
 ## 输出
 
-`auto` 会在 `out/` 生成：
+`auto`（2.0 默认 fast 档）**只产文本证据，不生成任何图**（铁律「默认不渲染」）：
 
 | 文件 | 内容 |
 |---|---|
-| `<id>-cNN_起-止_3x3.jpg` | 拼图（每格一张画面，从左到右、从上到下按时间排列） |
-| `<id>-subs_N行.jpg` | 字幕带（只有字幕区，竖排 N 行） |
+| `<id>-manifest.json` | **结构化索引**（`schemaVersion: 2`）：段卡片（骨架/弹幕情绪/低活跃/需读图）+ 证据可用性 + 报价 + `visualRequest` |
+| `<id>-plan.json` | 每段计划（段卡片 + 帧成本），供 `render --plan` 按需渲染 |
+| `<id>-report.html` | 人类自检（概览 / 证据可用性 / 段列表 / 判定理由） |
 | `<id>-official-subs.txt` | 官方字幕全文（带时间戳）；另有 `-official-subs-plain.txt` 纯文本 |
-| `<id>-official-subs-translated.txt` | 官方中文字幕（视频有翻译轨时） |
-| `<id>-manifest.json` | **结构化索引**：每张图的时间范围、每格时间戳、变化强度、弹幕热区、低活跃段、`semanticShifts`（语义切换点）、`coverage`（各信号源产物完整性） |
+| `<id>-official-subs-translated.txt` | 官方中文翻译轨（视频有翻译轨时） |
+
+需要画面时**按需渲染**（不渲染不动磁盘）：
+
+```bash
+node fisheye.mjs render <BV|文件|URL> --track coarse        # 全片 4 分钟/帧，1~2 张
+node fisheye.mjs render <BV|文件|URL> --track algorithm --segments 3,7   # 单段 9 帧 + 吸附 + 降权
+node fisheye.mjs render <BV|文件|URL> --track adaptive       # 按视频类型密度（两源低置信时）
+```
 
 `<id>` 是「文件名安全」的稳定标识：B 站 = BV 号，本地 = 文件 basename，URL = 规范化后的哈希。
 
-终端输出一份「规划报告」，解释每个决策（下面的数字拼自多条视频，只用来看格式）：
+终端输出走 stderr（stdout 只留 `MANIFEST:` / `PLAN:` / `REPORT:` 路径，供 agent 重定向），示例：
 
 ```
-[比例] 画面 1080x1920 → 拼图 1920x3414，单张约 3793 token
-[内容] 显著变化 14 处，变化率 0.13 次/秒
-[字幕] 无可用官方字幕，检出烧录字幕带（82%-90%，置信度 0.63）→ 字幕带 1 张
-[语义] 切出 3 个话题切换点
-[低活跃段] 弹幕密度低谷 1 段：
-       04:40-06:40（120s）低活跃  密度比全片低 34%  关键词「感谢金主爸爸」
-[弹幕] 335 条，观众最激动的时段：
-       01:25   34 条  「打破桎梏×8」「翻山覆海×3」
-[密度] 目标 ≤13s/帧（按变化率推导）
-[张数] 密度需要 1 张，预算允许 4 张 → 采用 1 张
-[取帧] 00:00-01:49  阈值 0.3，8/9 帧吸附
-[拼图 1/1] 00:00-01:49  9 帧 → BVxxx-c00_0000-0109_3x3.jpg
-[精读建议] 2 个时间点（几何 1 + 弹幕 1）：
-       00:27  弹幕热区  —— 弹幕热区 19 条
+[字幕] 官方中文翻译 1088 行 / 11615 字（有翻译轨默认用，省 3.5 倍）
+[低活跃段] 弹幕密度低谷 2 段（低互动，未必是广告）：
+        05:20-07:40（140s）  样本「已下单，未付款，盼发货」
+[广告词] 3 条命中（纯线索，判断归 agent）
+[弹幕] 3580 条，观众最激动的时段：
+        14:50   43 条  「吓哭了×10」「将自然哲学理论偷换成政治观念了」
+[语义] 切出 5 个话题切换点
+=== 完成（fast 文本模式，未渲染任何画面）===
+只读文本 ≈ 1298 token（10 段骨架）
+MANIFEST: .../BVxxx-manifest.json
+PLAN: .../BVxxx-plan.json
+REPORT: .../BVxxx-report.html
 ```
 
 ### 产物完整性摘要
@@ -225,7 +233,7 @@ node fisheye.mjs grab BV1ziWP6qENy 82.5,145.0
 `auto` / `local --smart` 跑完会打印一行，说明每个信号源到底给没给到东西：
 
 ```
-[产物] 字幕✓1026 · 弹幕✓3580 · 广告✓2 · 语义✓5 · 转写— · 字幕带—
+[产物] 字幕✓1026 · 弹幕✓3580 · 低活跃✓2 · 语义✓5 · 转写— · 字幕带—
 ```
 
 标记含义：`✓` 拿到 / `△` 质量差 / `○` 跳过 / `—` 无。同样的结构写进 manifest 的 `coverage` 字段——agent 不用翻日志猜「哪里静默降级了」。
@@ -234,6 +242,8 @@ node fisheye.mjs grab BV1ziWP6qENy 82.5,145.0
 | 命令 | 作用 |
 |---|---|
 | `auto <BV\|文件\|URL>` | 推荐入口：自动识别平台 → 规划密度/张数/字幕策略 → 铺网 |
+| `auto <BV\|文件\|URL>` | 推荐入口：fast 文本模式（段卡片 + 骨架 + 弹幕，<5s，不产图）；`--standard` 走完整采集 + 铺网 |
+| `render <BV\|文件\|URL>` | 按 `plan.json` 惰性渲染（`--track coarse\|algorithm\|adaptive\|lowconf`、`--segments N,M`） |
 | `grid <BV>` | 只铺网（`--chunk` 秒/段、`--grid` 如 3x3） |
 | `subs <BV>` | 只生成字幕带（`--count` 行数、`--band auto\|0.22`） |
 | `refine <BV>` | 挑出值得精读的时间点，**并直接截好原图**（模板 / 决策文件 / 几何兜底） |
@@ -279,8 +289,8 @@ fisheye 核心不认识任何具体平台。每个平台是一个「适配器」
 
 | 适配器 | 输入 | 能力 |
 |---|---|---|
-| `bilibili` | BV 号 | 官方字幕 + 弹幕 + 下载 + 广告识别（弹幕族 + 字幕关键词） |
-| `local` | 本地文件路径 | 快速抽图；`--smart` 走完整采集（转写/字幕带/广告/语义） |
+| `bilibili` | BV 号 | 官方字幕 + 弹幕 + 下载 + 低活跃检测（弹幕密度）+ 广告词高光 |
+| `local` | 本地文件路径 | 快速抽图；`--smart` 走完整采集（场景检测/字幕带） |
 | `url` | http(s) 链接 | yt-dlp 下载，其余同本地 |
 
 加平台 = 照 `lib/platforms/_template/` 抄一个目录 + 注册表加一行 import，不碰核心。**静态注册 + 目录约定**（不是热插拔）：fisheye 是本地 CLI，平台内置随包发布。
@@ -289,33 +299,26 @@ fisheye 核心不认识任何具体平台。每个平台是一个「适配器」
 
 fisheye 的「判断」都有参数，按你的平台/模型/素材调：
 
-### 广告检测（信号源可插拔）
+### 广告检测（两路信号）
 
-广告识别已拆成可注册的**信号源**（`lib/signals/`）：弹幕族五路 + 台词族两路，按 `primary`（主信号）/`secondary`（补充）/`subtitle`（台词族）分组编排。每个平台适配器用 `adDetector` 声明「开哪些信号 + 用什么关键词」。
+广告识别从 1.0.29 的「七路信号」砍到 **两路**（`lib/signals/`，0.1 验证：五路零独立命中，两路召回 = 七路 = 100%）：
 
-| 信号 | 分组 | 含义 |
+| 输出 | 来源 | 含义 |
 |---|---|---|
-| `danmaku-density` | primary | 弹幕密度低谷（观众跳过 = 广告） |
-| `danmaku-keywords` | primary | 广告关键词群聚 |
-| `mark` | secondary | 数字打点（"1407" = 14:07 广告结束） |
-| `head` | secondary | 片头口播广告 |
-| `buy` | secondary | 购买类话术回溯 |
-| `sub-keywords` | subtitle | 字幕/转写里的购买词（不依赖弹幕） |
-| `sub-patterns` | subtitle | 字幕/转写里的精确句式（"点击下方链接"） |
+| `lowActivitySegments` | 弹幕密度低谷 | 低互动段（影响取帧：render 的 algorithm 轨降权 w=0.3） |
+| `adKeywordHits` | 广告词匹配 | 纯线索（不影响决策；去重 + 限量 ≤50） |
+
+平台适配器只声明「能提供什么广告词证据」（`adDetector.adKeywords`），不声明「用哪些信号」：
 
 ```js
-// 内置七路，默认开六路（弹幕族 + 字幕关键词）
 adDetector: {
-  keywords: DEFAULT_KEYWORDS,               // 正则对象 { ad, strong, mark, buy, sub, pattern }
-  signals: ['danmaku-density', 'danmaku-keywords', 'mark', 'head', 'buy', 'sub-keywords'],
+  adKeywords: AD_KEYWORD,   // 正则对象（金主/恰饭/商单/硬广/软广/赞助/推广/接广/带货/下单/优惠码）
 }
 ```
 
-无弹幕平台（本地/URL）自动开台词族两路（`sub-keywords`/`sub-patterns`），数据来自 whisper 转写的带时间戳台词。
+无弹幕平台（本地/URL）`adDetector: null`——不做广告检测（设计 05 §7.5）。完全自定义检测则直接给 `adDetector.detect` 函数（`({ danmaku, duration }) => [{ from, to, lowDensity, sample }]`）。
 
-加新信号 = 在 `lib/signals/` 加一个文件 + 在 `AD_SIGNALS` 注册一行 + 平台在 `signals` 数组声明。完全自定义检测则直接给 `adDetector.detect` 函数（`({ danmaku, duration, subtitles, transcript }) => [{ from, to, confidence, ... }]`）。
-
-调参建议：先用 2~3 条真实视频标真值，再调关键词/信号；误报多就关掉弱信号，漏报多就加平台专属词（数字打点最有效）。
+> **为什么砍**：判断「是不是广告」是 agent 的活。fisheye 只给「低活跃段（观众不互动）」+「广告词高光（线索）」，agent 拿原文自己判断。降权（w=0.3）而非跳过：误报只降权（可恢复），跳过是整段删除（灾难性）。
 
 ### 弹幕过滤（自定义黑话与引流词）
 
@@ -323,7 +326,7 @@ adDetector: {
 
 - 改 `danmaku-filter.mjs` 里的 `AD_RULES`（广告引流词表）加你平台的黑话；噪声判定走 `spamReason()`（纯符号/复读/无意义短句）
 - 过滤规则有独立测试：`node test-danmaku-filter.js`（51 条用例）
-- `--no-danmaku-frames` 可让弹幕只做「热区/广告」判断，不参与取帧
+- `--no-danmaku-frames` 可让弹幕只做「热区/低活跃」判断，不参与取帧
 
 ### 预算模型（按你的 tokenizer 校准）
 
@@ -332,11 +335,11 @@ token 估算按「信息源单价」算，可逐项覆盖：
 | 常量 | 默认 | 说明 |
 |---|---|---|
 | `FISHEYE_TOKENS_PER_GRID` | 1024 | 一张 3×3 拼图 |
-| `FISHEYE_TOKENS_PER_SUBS` | 1000 | 一张字幕带 |
-| `FISHEYE_TOKENS_PER_FINE` | 1024 | 一个精读帧 |
-| `FISHEYE_TOKEN_MODEL` | 1.0 | 模型系数（`gpt` 1.0 / `qwen` 1.35 / `gemini` 0.8 / 自定义数字） |
+| `FISHEYE_TOKENS_PER_SUBS` | 1024 | 一张字幕带 |
+| `FISHEYE_TOKENS_PER_FINE` | 1024 | 一个精读帧（5x5 也是一张图，与 coarse 同价） |
+| `FISHEYE_TOKEN_MODEL` | 1.0 | 模型系数（`gpt` 1.08 / `qwen` 1.27 / `gemini` 0.25 / `claude` 1.56 / 自定义数字） |
 
-拼图单价还会按画面面积修正（竖屏是横屏的 ~3 倍），所以同样 12 张，竖屏视频会先触到预算上限。
+> 2.0 口径：官方 DeepSeek Flash vision 每图上限 **1024 token**（缩放 ~1300×1300，与图片原始尺寸无关）。旧常量 1200/3800 已废。
 
 ### 抽帧密度（手动或自适应）
 
@@ -394,7 +397,7 @@ node fisheye.mjs local <视频文件> --smart
 node fisheye.mjs auto <视频文件>
 ```
 
-不依赖 B站 登录与字幕。`local`（不带 `--smart`）只是 ffmpeg 解析时长 → 按 grid 等间隔抽帧拼图 → 输出 `SHEET: <拼图路径>`；`--smart` 或 `auto` 才走完整采集——无官方字幕时自动 whisper 转写（口播/播客类），转写不可用则检测烧录字幕带，转写台词还会喂广告识别与语义切分。适合 mp4/mkv/avi/mov/webm。
+不依赖 B站 登录与字幕。`local`（不带 `--smart`）只是 ffmpeg 解析时长 → 按 grid 等间隔抽帧拼图 → 输出 `SHEET: <拼图路径>`；`--smart` 或 `auto` 才走完整采集——无官方字幕时自动 whisper 转写（口播/播客类），转写不可用则检测烧录字幕带；转写台词会喂**字幕骨架**（段卡片）与**语义切分**。适合 mp4/mkv/avi/mov/webm。
 
 ### 音频转写（whisper.cpp）
 
@@ -498,19 +501,33 @@ dsh plugin --profile web add @pls-compile-owo/dsh-fisheye
 
 ## 它怎么工作
 
+**2.0 默认（fast 档，<5s，只产文本，不渲染）**：
+
 ```
 ① 解析输入 → 平台适配器（BV / 本地文件 / URL）
-② 取元信息（分P / 时长 / 分辨率）
-③ 时间范围（--from/--to）
-④ 画面比例 → 单张拼图 token 估算（竖屏是横屏的 3 倍！）
-⑤ 场景检测（ffmpeg 一次解码，320p）→ 内容变化率
-⑥ 字幕决策：官方字幕 > 转写 > 烧录字幕带 > 只看画面
-⑦ 弹幕（B 站）：热区（观众高光）+ 低活跃段（多信号源）
-⑧ 语义切分（可选）：纯 JS 词法（char-bigram）或 embedding 增强 → 话题切换点
+② 取元信息（分P / 时长 / 分辨率）+ 时间范围（--from/--to）
+③ 字幕降级链：中文翻译轨 > 官方原文轨 > whisper 转写 > 烧录字幕带（标 source）
+④ 弹幕（B 站）：低活跃段（密度低谷）+ 广告词高光（纯线索）+ 热区
+⑤ 语义切分（可选）：纯 JS 词法（char-bigram）或 embedding 增强
+⑥ 段卡片：4 分钟切段 + 字幕骨架（四铁律）+ 弹幕情绪 + 证据可用性
+⑦ 产出：manifest（schemaVersion 2）+ plan.json + report.html（零 jpg）
+```
+
+**standard 路径（`--standard`，完整采集 + 铺网）**：
+
+```
+⑧ 场景检测（ffmpeg 一次解码，320p）→ 内容变化率
 ⑨ 密度决策：变化率 → 目标帧间隔（4/6/9/13 秒）
 ⑩ 张数决策：密度需求 vs 预算封顶（硬上限 12 张）
-⑪ 铺网：分段 → 取帧（等间隔骨架 + 吸附画面变化点）→ 拼图
+⑪ 铺网：分段 → 取帧（等间隔骨架 + 单档吸附 0.3 + 低活跃降权 w=0.3）→ 拼图
 ⑫ 精读建议：场景变化 + 弹幕热区 + 语义切换点，避开低活跃段
+```
+
+**按需渲染（`render --plan`）**：
+
+```
+⑬ 选轨：coarse（4 分钟/帧）/ algorithm（单档吸附 + 降权）/ adaptive（按类型）/ lowconf（低置信拼图）
+⑭ 按 plan.json 选段渲染，惰性出图
 ```
 
 ### 几个关键设计
@@ -524,8 +541,8 @@ dsh plugin --profile web add @pls-compile-owo/dsh-fisheye
 **为什么弹幕能参与取帧？**
 B 站弹幕密度本身就是内容信号。实测一条 40 分钟视频：低活跃段弹幕密度只有全片的 **31%**（观众跳过），观众最激动处是 3~5 倍。
 
-**为什么低活跃段可以不占帧？**
-把低活跃段从时间轴「压缩掉」，剩余有效时间重新均分——帧数不变，内容密度提升。实测：跳过 118 秒广告后，平均帧间隔从 22.1 秒降到 **8.3 秒**。
+**为什么低活跃段降权而不是跳过？**
+低活跃段（密度低谷）采样密度 ×0.3（`FISHEYE_LOW_ACTIVITY_WEIGHT`），内容段照常——误报只降权（可恢复），完全跳过则是整段删除（灾难性）。降权只在 render 的 algorithm 轨生效；纯文本链路只标布尔 `lowActivity` 给 agent 参考。
 
 **为什么语义切分不靠大模型？**
 字幕/转写文本做相似度检测（默认纯 JS char-bigram 漂移，有 python 时换 embedding 增强），零 token、纯 CPU。语义切换点作为「结构信号」喂精读建议，不融合进几何（几何是「内容信号」，语义是「结构信号」）。
@@ -537,8 +554,9 @@ B 站弹幕密度本身就是内容信号。实测一条 40 分钟视频：低�
 
 | 阶段 | 耗时 | 说明 |
 |---|---|---|
-| **auto 全流程** | **75 ~ 83 秒** | 场景检测 + 字幕/弹幕 API + 语义 + 拼图 |
-| ├ 场景检测（瓶颈） | ~72 秒 | ffmpeg 全片 320p 解码，占全流程 ~95% |
+| **auto（fast 文本模式，默认）** | **~1.2 秒** | 字幕/弹幕 API + 切段 + 摘要 + 语义（跳过全片场景检测，零渲染） |
+| auto（`--standard` 完整采集） | 75 ~ 83 秒 | 场景检测 + 字幕/弹幕 API + 语义 + 拼图 |
+| ├ 场景检测（standard 瓶颈） | ~72 秒 | ffmpeg 全片 320p 解码 |
 | ├ 字幕 / 弹幕 API | ~1 ~ 2 秒 | 取决于网络与 B 站 响应 |
 | ├ 语义切分（纯 JS 词法） | ~0.2 秒 | 1026 行字幕，CPU 单核 |
 | └ 拼图 1 张（9 帧） | ~1 秒 | ffmpeg 单帧截取 |
@@ -548,7 +566,7 @@ B 站弹幕密度本身就是内容信号。实测一条 40 分钟视频：低�
 | 下载 281 MB | 227 秒 | 网络相关，不算处理耗时 |
 | **峰值内存** | **142 MB**（其中 ffmpeg 85 MB） | 进程树 RSS |
 
-**结论**：40 分钟视频的处理成本几乎全在「场景检测」——为判断内容变化率做一次全片 320p 解码。抽帧、拼图、语义、字幕都是秒级。想更快可以先用 `--from/--to` 只处理关心的区间。
+**结论**：2.0 默认 fast 档 **<5s**（跳过全片场景检测、不渲染）；`--standard` 完整采集的成本几乎全在「场景检测」——为判断内容变化率做一次全片 320p 解码。抽帧、拼图、语义、字幕都是秒级。想更快可以先用 `--from/--to` 只处理关心的区间。
 
 ### 不同硬件（未实测，不编数）
 
@@ -571,11 +589,11 @@ node fisheye.mjs auto BV1xxx --budget 20000
 把结果贴到 Issue，会更新这张表。
 ## 已知限制
 
-- **能力随平台变化**：B 站最全（字幕+弹幕+广告）；本地/URL 无弹幕，广告识别与语义切分都靠 whisper 转写的带时间戳台词；画面 OCR 视觉族仍未做
+- **能力随平台变化**：B 站最全（字幕+弹幕+低活跃+广告词）；本地/URL 无弹幕，不做广告检测（`adDetector: null`），字幕靠 whisper 转写 / 烧录字幕带；画面 OCR 视觉族仍未做
 - **依赖登录态（仅 B 站）**：部分视频的字幕/播放地址需要 cookies
 - **语义切分只对有字幕/对白的视频有效**：无官方字幕且转写不可用时自动跳过
-- **低活跃段检测对 B 站（弹幕）最强**：无弹幕平台的台词族是补强
-- **长视频成本高**：40 分钟中文视频官方字幕约 1.2 万 token（英文 AI 字幕更多，可到 5 万）
+- **低活跃段检测只对 B 站（弹幕）有效**：无弹幕平台不做广告检测（设计 05 §7.5），这是刻意边界
+- **长视频成本高**：40 分钟英文 AI 字幕全文约 5 万 token；2.0 摘要骨架压到 ~1.3k/段（全文仍落盘供引用）
 - **B 站接口会变**：`selftest` 能帮你快速定位是哪个环节挂了
 
 ### 调试 trace（`FISHEYE_TRACE=1`）
@@ -593,7 +611,7 @@ trace 只写文件与 stderr，不污染 stdout 的结果输出；不开启时�
 ### 测试
 
 ```bash
-node --test --test-concurrency=1 test/          # 单元 + golden + 集成 + 退化场景（211 用例）
+node --test test/                               # 单元 + golden + 集成 + 退化场景（288 用例）
 node --test test/integration.test.mjs           # 真实 CLI 端到端（local / --smart + trace / selftest / clean）
 node --test test/degradation.test.mjs           # 退化场景：无 ffmpeg / 坏文件 / 坏参数 / 坏 manifest
 ```
@@ -607,7 +625,7 @@ node test-danmaku-filter.js              # 弹幕过滤规则测试（51 条用�
 node fisheye.mjs selftest --deep         # 含抽帧/字幕带/OCR/转写/语义实测的自检
 ```
 
-当前：**211 个测试**（208 通过 + 3 跳过）+ **51 条弹幕过滤用例**；广告检测有 **8 条人工标注真值**视频。
+当前：**288 个测试**（285 通过 + 3 跳过）+ **51 条弹幕过滤用例**；低活跃真值有 **27 条人工标注**视频（`test/golden/low-activity/`）。
 
 项目结构：
 
@@ -625,8 +643,15 @@ node fisheye.mjs selftest --deep         # 含抽帧/字幕带/OCR/转写/语义
 | `lib/bili.mjs` | B站纯函数 + API（视频信息 / WBI 签名 / 官方字幕 / 弹幕） |
 | `lib/frame.mjs` | 抽帧与时间点选择（场景检测 / 取帧计划 / 单帧截取） |
 | `lib/band.mjs` | 字幕带定位（纯 JS，ffmpeg PGM 灰度 → 梯度/分位/峰值，零 python） |
-| `lib/danmaku.mjs` | 弹幕热区摘要 + 广告检测入口 re-export（实现在 `lib/signals/`） |
-| `lib/signals/` | 广告信号源（弹幕族五路 + 台词族两路，可插拔注册表 + 编排器） |
+| `lib/danmaku.mjs` | 弹幕热区摘要 + 低活跃/广告词入口 re-export（实现在 `lib/signals/`） |
+| `lib/signals/` | 广告信号（两路：`density` 低活跃检测 + `keywords` 广告词高光） |
+| `lib/subs-digest.mjs` | 字幕摘要（四铁律 + fact/op 双通道 + 可压缩性） |
+| `lib/emotion.mjs` | 情绪双分数（字幕/弹幕 + √压缩 + top 样本） |
+| `lib/segments.mjs` | 4 分钟切段 + 段卡片（秒级时间戳） |
+| `lib/tracks.mjs` | 画面三轨（coarse/algorithm/adaptive + 单档吸附 + w=0.3 降权） |
+| `lib/video-type.mjs` | 视频类型判定（music/slides/screen/foreign） |
+| `lib/render.mjs` | 按 plan.json 惰性渲染（`render --plan`） |
+| `lib/auto-text.mjs` | fast 文本模式（`auto` 默认：只产文本证据，不渲染） |
 | `lib/semantic.mjs` | 语义切分能力探测（embedding 增强 + 纯 JS 兜底） |
 | `lib/semantic-core.mjs` | 语义切分纯 JS 核心（char-bigram 词法漂移 + top-k 峰值） |
 | `lib/audio.mjs` | 音频转写（whisper.cpp 探测 + 调用） |
@@ -634,7 +659,7 @@ node fisheye.mjs selftest --deep         # 含抽帧/字幕带/OCR/转写/语义
 | `lib/ytdlp.mjs` | yt-dlp 探测 + 视频下载 |
 | `lib/batch.mjs` | 批量处理（并发编排） |
 | `lib/budget.mjs` | token 预算估算（单价 + 模型系数） |
-| `lib/collect.mjs` | 采集层（下载/元信息/字幕/弹幕/广告/语义 → ctx） |
+| `lib/collect.mjs` | 采集层（下载/元信息/字幕/弹幕/低活跃/语义 → ctx） |
 | `lib/planner.mjs` | 规划（密度/张数/预算） |
 | `lib/executor.mjs` | 精读建议（几何挑点 + 弹幕热区 + 语义切换点合并） |
 | `lib/stages.mjs` | 子命令编排（auto / grid / subs / refine / grab / local / ...） |
@@ -642,7 +667,7 @@ node fisheye.mjs selftest --deep         # 含抽帧/字幕带/OCR/转写/语义
 | `lib/trace.mjs` | 调试 trace（`FISHEYE_TRACE`） |
 | `dsh-plugin/` | DSH 插件包装（`video_understand` 工具） |
 | `semantic/` | 语义切分参考实现（`cli.py` + `requirements.txt`，fastembed + ruptures） |
-| `test/` | `node:test` 单元测试 + golden 验收集（`fixtures/` / `ad-truth/`）+ 集成/退化测试 |
+| `test/` | `node:test` 单元测试 + golden 验收集（`fixtures/` / `low-activity/`）+ 集成/退化测试 |
 | `tools/` | 基准脚本（`bench.ps1`：分阶段耗时 + 峰值内存） |
 | `docs/` | 设计/配置/评审文档（中英）+ 演示 GIF + demo 生成脚本 |
 | `.github/` | CI 工作流（`ci.yml`）+ issue 模板 |

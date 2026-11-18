@@ -108,22 +108,21 @@ grids = ceil(duration / frame interval / 9), capped by budget, hard maximum 12
 ### Lessons learned
 
 - Multi-page videos used `view.duration` (sum of all pages) for density → should be `pages[p-1].duration`
-- Portrait token underestimation: a 1920×1920 grid costs 2133 tokens, not 1200
+- ~~Portrait token underestimation~~ **eliminated in 2.0**: image price is independent of dimensions (Flash resizes to ~1300×1300, cap 1024 tokens), portrait and landscape cost the same
 
-## 6. Ad segments: grade them, never guess
+## 6. Low-activity segments: down-weight, never skip (2.0)
 
 ```
 30s sliding window over danmaku density
-→ continuous windows below 45% of the median (≥60s) → candidates
-→ ad keywords (金主/恰饭/赞助…) within ±20s → confidence='high'
-→ no keywords → confidence='low' (a low-interaction segment, not necessarily an ad)
+→ continuous windows below 45% of the median (≥45s) → low-activity segments
+→ output lowActivitySegments: [{ from, to, lowDensity, sample }]
 ```
 
-**Why grading**: a pure density valley can also be a "pictures-only segment", a "BGM segment" or slow motion — skipping it would lose content. Only "valley **and** ad keywords" is safe to drop.
+**Not "ad segments"**: a density valley can also be a "pictures-only segment", a "BGM segment" or slow motion — fisheye doesn't know whether it's an ad, only that "viewers don't engage".
 
-**What happens to high-confidence ads**: they are compressed out of the timeline and the remaining time is redistributed. The grid count stays the same, so content density rises.
+**Handling: down-weight, never skip** (design 05 §7.3) — low-activity spans get sampling density ×0.3 (`FISHEYE_LOW_ACTIVITY_WEIGHT`), content spans stay at 1.0. A false positive only down-weights (recoverable), while skipping deletes a whole span (catastrophic). Down-weighting applies only to render's algorithm track; the text-only pipeline just flags a boolean `lowActivity` for the agent.
 
-**Only `confidence='high'` segments are compressed** — `low` (valley only, no keywords) still occupies frames, because a pure valley may be pictures or slow motion.
+**What 2.0 cut**: 1.0.29's seven signals (graded ad segments + keyword clusters + digit marks + head ads + purchase backtracking + subtitle family + partition lexicon + semantic arbitration) are all cut to two (`density` + `keywords`; 0.1 verified: the other five contribute zero independent hits). Judging "is it an ad" is the agent's job.
 
 ## 7. What was deliberately not built (and why)
 

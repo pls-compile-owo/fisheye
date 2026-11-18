@@ -12,7 +12,7 @@ English: [DETAIL.en.md](./DETAIL.en.md)
 | 本地文件 | `fisheye local <path>`（抽帧拼图，可选 whisper 转写） |
 | URL | `fisheye url <url> --budget N`（yt-dlp） |
 
-工具只产出证据（拼图路径、字幕文本、弹幕热区、广告段），不负责"理解"——摘要由调用方模型或下游插件完成。
+工具只产出证据（拼图路径、字幕文本、弹幕热区、低活跃段），不负责"理解"——摘要由调用方模型或下游插件完成。
 
 ## 配置
 

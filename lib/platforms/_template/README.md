@@ -19,7 +19,7 @@ English: [README.en.md](./README.en.md)
 | `media(pageNo=1)` | 本地 mp4 路径 | 下载/定位 |
 | `subtitles(range)` | `{ body: [{from, content}], quality }` 或 `null` | 官方字幕 |
 | `danmaku(range)` | `[{t, text}]` 或 `null` | 弹幕/互动 |
-| `adDetector` | `{ keywords, signals }` 或 `null` | 广告识别（平台适配） |
+| `adDetector` | `{ adKeywords }` 或 `null` | 广告词证据（平台只声明"能提供什么"，用哪些信号是 fisheye 的判断） |
 
 ## 关键约定
 

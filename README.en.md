@@ -56,7 +56,7 @@ Not everything needs to be read as images. Sources are ranked by "information pe
 | Priority | Source | Cost | When |
 |---|---|---|---|
 | ① | **Official subtitles** (CC track, prefer the AI Chinese one) | hundreds – tens of thousands of tokens | when the video has subtitles — text is an order of magnitude cheaper than pixels |
-| ② | **Burnt-in subtitle band** (subtitles baked into the picture) | ~1000 tokens | no official subtitles, but text sits at the bottom of the frame |
+| ② | **Burnt-in subtitle band** (subtitles baked into the picture) | ~1024 tokens | no official subtitles, but text sits at the bottom of the frame |
 | ③ | **Danmaku hotspots** (audience reaction, Bilibili) | ~100 tokens | find the moments the audience reacted to — **invisible to both frames and subtitles** |
 | ④ | **Frame grids** (3×3) | 1024–1024 tokens/grid | fallback: when pixels actually matter |
 | ⑤ | **Semantic shifts** (topic change points, optional) | zero tokens | where the video changes topic/segment, feeding refine suggestions |
@@ -124,8 +124,10 @@ How to get them: log in to Bilibili in a browser → F12 → Application → Coo
 | Variable | Meaning |
 |---|---|
 | `FISHEYE_LANG` | CLI language: `zh` (default) / `en` |
-| `FISHEYE_TOKENS_PER_GRID` / `FISHEYE_TOKENS_PER_SUBS` / `FISHEYE_TOKENS_PER_FINE` | token estimate overrides per grid / subtitle band / close-up (default 1024 / 1000 / 1024) |
-| `FISHEYE_TOKEN_MODEL` | correct estimates by tokenizer: `gpt` (1.0) / `qwen` (1.35) / `gemini` (0.8) / a number |
+| `FISHEYE_TOKENS_PER_GRID` / `FISHEYE_TOKENS_PER_SUBS` / `FISHEYE_TOKENS_PER_FINE` | token estimate overrides per grid / subtitle band / close-up (default 1024 / 1024 / 1024) |
+| `FISHEYE_TOKEN_MODEL` | correct estimates by tokenizer: `gpt` (1.08) / `qwen` (1.27) / `gemini` (0.25) / `claude` (1.56) / a number |
+| `FISHEYE_VISUAL_TRACK` | visual authorization tier: `on` / `ask` (default) / `off` |
+| `FISHEYE_LOW_ACTIVITY_WEIGHT` | low-activity down-weight (default 0.3, render algorithm track only) |
 | `FISHEYE_WHISPER` / `FISHEYE_WHISPER_MODEL` | whisper executable / model (ggml-*.bin, optional) |
 | `FISHEYE_HOME` | data directory (where cache/out live, default: project directory) |
 | `SEMANTIC_CLI` / `SEMANTIC_PYTHON` | semantic CLI / the Python that runs it (default: bundled `semantic/cli.py`) |
@@ -188,35 +190,41 @@ node fisheye.mjs grab BV1ziWP6qENy 82.5,145.0
 
 ## Output
 
-`auto` writes these into `out/`:
+`auto` (2.0 default fast mode) produces **text evidence only — no images** (iron law: no render by default):
 
 | File | Content |
 |---|---|
-| `<id>-cNN_start-end_3x3.jpg` | frame grid (one cell per frame, ordered left-to-right, top-to-bottom by time) |
-| `<id>-subs_N.jpg` | subtitle band (only the subtitle region, N lines stacked) |
+| `<id>-manifest.json` | **structured index** (`schemaVersion: 2`): segment cards (skeleton / danmaku emotion / low-activity / needs-frames) + evidence availability + quote + `visualRequest` |
+| `<id>-plan.json` | per-segment plan (cards + frame costs), consumed by `render --plan` |
+| `<id>-report.html` | human self-check (overview / evidence / segment list / rationale) |
 | `<id>-official-subs.txt` | full official subtitles with timestamps; plus `-official-subs-plain.txt` as plain text |
-| `<id>-official-subs-translated.txt` | official Chinese translation (when the video has a translation track) |
-| `<id>-manifest.json` | **structured index**: per-grid time ranges, per-cell timestamps, change strength, danmaku hotspots, low-activity segments, `semanticShifts`, `coverage` (per-source artifact completeness) |
+| `<id>-official-subs-translated.txt` | official Chinese translation track (when the video has one) |
+
+Render images on demand (nothing is written to disk otherwise):
+
+```bash
+node fisheye.mjs render <BV|file|URL> --track coarse        # whole video, 4 min/frame, 1–2 grids
+node fisheye.mjs render <BV|file|URL> --track algorithm --segments 3,7   # 9 frames/segment + snap + down-weight
+node fisheye.mjs render <BV|file|URL> --track adaptive       # density by video type (both sources low-confidence)
+```
 
 `<id>` is a stable "filename-safe" identifier: Bilibili = BV id, local = file basename, URL = hash of the normalized URL.
 
-The CLI prints a planning report explaining every decision (the numbers below are stitched from several videos, only to show the format):
+Terminal output goes to stderr (stdout carries only `MANIFEST:` / `PLAN:` / `REPORT:` paths for agent redirection), e.g.:
 
 ```
-[ratio] 1080x1920 → grid 1920x3414, ~3793 tokens per grid
-[content] 14 strong changes, rate 0.13/s
-[subs] no usable official subtitles; burnt-in band detected (82%-90%, confidence 0.63) → 1 band image
-[semantic] 3 topic shifts
-[ads] 1 low-density segment:
-       04:40-06:40 (120s) suspected ad  34% below average density  keyword "thanks sponsor"
-[danmaku] 335 comments, audience peaks:
-       01:25   34 comments  "break the shackles×8" "over the mountains×3"
-[density] target ≤13s/frame (derived from rate)
-[grids] density needs 1, budget allows 4 → using 1
-[grab] 00:00-01:49  threshold 0.3, 8/9 frames snapped
-[grid 1/1] 00:00-01:49  9 frames → BVxxx-c00_0000-0109_3x3.jpg
-[refine] 2 moments (geometry 1 + danmaku 1):
-       00:27  danmaku hotspot  — 19 comments
+[subs] official Chinese translation 1088 lines / 11615 chars (translation track preferred, 3.5× cheaper)
+[low-activity] 2 danmaku density valleys (low engagement, not necessarily ads):
+        05:20-07:40 (140s)  sample "已下单，未付款，盼发货"
+[ad-keywords] 3 hits (pure hints, judgment stays with the agent)
+[danmaku] 3580 comments, audience peaks:
+        14:50   43 comments  "吓哭了×10" "将自然哲学理论偷换成政治观念了"
+[semantic] 5 topic shifts
+=== done (fast text mode, nothing rendered) ===
+text only ≈ 1298 tokens (10 segment skeletons)
+MANIFEST: .../BVxxx-manifest.json
+PLAN: .../BVxxx-plan.json
+REPORT: .../BVxxx-report.html
 ```
 
 ### Artifact completeness summary
@@ -224,7 +232,7 @@ The CLI prints a planning report explaining every decision (the numbers below ar
 After `auto` / `local --smart`, one line says what each source actually produced:
 
 ```
-[artifacts] subs✓1026 · danmaku✓3580 · ads✓2 · semantic✓5 · transcript— · band—
+[artifacts] subs✓1026 · danmaku✓3580 · lowActivity✓2 · semantic✓5 · transcript— · band—
 ```
 
 Marks: `✓` obtained / `△` poor quality / `○` skipped / `—` none. The same structure goes into the manifest's `coverage` field — agents no longer have to infer silent degradation from logs.
@@ -233,7 +241,8 @@ Marks: `✓` obtained / `△` poor quality / `○` skipped / `—` none. The sam
 
 | Command | Purpose |
 |---|---|
-| `auto <BV\|file\|URL>` | recommended entry: detect platform → plan density/grid-count/subtitle strategy → lay out grids |
+| `auto <BV\|file\|URL>` | recommended entry: fast text mode (segment cards + skeleton + danmaku, <5s, no images); `--standard` for full collection + grids |
+| `render <BV\|file\|URL>` | lazy render from `plan.json` (`--track coarse\|algorithm\|adaptive\|lowconf`, `--segments N,M`) |
 | `grid <BV>` | grids only (`--chunk` seconds per segment, `--grid` e.g. 3x3) |
 | `subs <BV>` | subtitle band only (`--count` lines, `--band auto\|0.22`) |
 | `refine <BV>` | pick moments worth a close-up, **and grab them** (template / decisions file / geometric fallback) |
@@ -289,50 +298,30 @@ Adding a platform = copy a directory from `lib/platforms/_template/` + one impor
 
 Every "judgement" in fisheye has parameters — tune them for your platform/model/material:
 
-### Ad detection (pluggable signal sources)
+### Ad detection (two signals)
 
-Ad detection is split into registrable **signal sources** (`lib/signals/`): five danmaku-family + two subtitle-family signals, orchestrated by `primary` (main) / `secondary` (booster) / `subtitle` (spoken-word family). Three levels of customization:
+Ad detection was cut from 1.0.29's "seven signals" to **two** (`lib/signals/`; 0.1 verified: the other five contribute zero independent hits, two-signal recall = seven-signal = 100%):
 
-**① only change keywords** (most common) — platform slang and purchase signals:
+| Output | Source | Meaning |
+|---|---|---|
+| `lowActivitySegments` | danmaku density valleys | low-activity spans (affects framing: algorithm track down-weights w=0.3) |
+| `adKeywordHits` | ad-keyword matching | pure hints (no decision impact; deduped, ≤50) |
 
-```js
-adDetector: {
-  keywords: ['1407 工程启动', 'recently ordered', 'shop', 'fish oil', 'thanks sponsor'],
-}
-```
-
-**② choose which signals to enable** — built-in:
-
-| Signal | Meaning |
-|---|---|
-| `density` | danmaku density dip (viewers skip ads) |
-| `keyword-cluster` | ad keywords clustered in time |
-| `head-ad` | head/spoken ad in the intro |
-| `buy-backtrack` | purchase-talk backtracking |
-| `digit-mark` | digit marks ("1407" = ad ends at 14:07) |
-| `sub-keywords` | purchase words in subtitles/transcript |
-
-```js
-adDetector: { signals: ['density', 'digit-mark', 'sub-keywords'] }
-```
-
-**③ fully custom detect function** (the adapter implements detection itself):
+Platforms only declare "what ad-keyword evidence they can offer" (`adDetector.adKeywords`), not "which signals to use":
 
 ```js
 adDetector: {
-  detect: async ({ danmaku, duration, subtitles }) => [
-    { from: 343, to: 430, confidence: 'high', reasons: ['fish-oil ad'] },
-  ],
+  adKeywords: AD_KEYWORD,   // regex (sponsor / merch / order / discount / ...)
 }
 ```
 
-Adding a new signal = add a file under `lib/signals/` + register one line in `AD_SIGNALS` + declare it in the platform's `signals` array. A fully custom detection function is also supported (see `--template` in `lib/platforms/_template/`).
+Platforms without danmaku (local/URL) use `adDetector: null` — no ad detection (design 05 §7.5). A fully custom detect function is also supported (`({ danmaku, duration }) => [{ from, to, lowDensity, sample }]`).
 
-Tuning advice: label 2–3 real videos first, then adjust keywords/signals; too many false positives → raise the confidence bar or disable weak signals; too many misses → add platform-specific words (digit marks work best).
+> **Why cut**: judging "is it an ad" is the agent's job. fisheye only gives "low-activity spans (viewers don't engage)" + "ad-keyword highlights (hints)", and the agent decides from the originals. Down-weight (w=0.3) rather than skip: a false positive only down-weights (recoverable), while skipping deletes a whole span (catastrophic).
 
 ### Danmaku filtering (your own slang and ad-link words)
 
-`danmaku-filter.mjs` drops ad-link spam: edit the `AD_RULES` table (ad-link words) for your platform's slang; noise is judged by `spamReason()` (pure symbols / repetition / meaningless short phrases). The rules have their own test: `node test-danmaku-filter.js` (51 cases). `--no-danmaku-frames` keeps danmaku for hotspot/ad judgement only, without frame participation.
+`danmaku-filter.mjs` drops ad-link spam: edit the `AD_RULES` table (ad-link words) for your platform's slang; noise is judged by `spamReason()` (pure symbols / repetition / meaningless short phrases). The rules have their own test: `node test-danmaku-filter.js` (51 cases). `--no-danmaku-frames` keeps danmaku for hotspot/low-activity judgement only, without frame participation.
 
 ### Budget model (calibrate to your tokenizer)
 
@@ -341,11 +330,11 @@ Token estimates use per-source unit prices, each overridable:
 | Constant | Default | Meaning |
 |---|---|---|
 | `FISHEYE_TOKENS_PER_GRID` | 1024 | one 3×3 grid |
-| `FISHEYE_TOKENS_PER_SUBS` | 1000 | one subtitle band |
-| `FISHEYE_TOKENS_PER_FINE` | 1024 | one close-up frame |
-| `FISHEYE_TOKEN_MODEL` | 1.0 | model factor (`gpt` 1.0 / `qwen` 1.35 / `gemini` 0.8 / custom number) |
+| `FISHEYE_TOKENS_PER_SUBS` | 1024 | one subtitle band |
+| `FISHEYE_TOKENS_PER_FINE` | 1024 | one close-up frame (a 5x5 also counts as one image, same as coarse) |
+| `FISHEYE_TOKEN_MODEL` | 1.0 | model factor (`gpt` 1.08 / `qwen` 1.27 / `gemini` 0.25 / `claude` 1.56 / custom number) |
 
-Grid price is also corrected by frame area (portrait ≈ 3× landscape), so a portrait video hits the budget cap sooner for the same grid count.
+> 2.0 pricing: DeepSeek Flash vision caps at **1024 tokens/image** (resized to ~1300×1300, independent of the source dimensions). Old constants 1200/3800 are deprecated.
 
 ### Frame density (manual or adaptive)
 
@@ -502,25 +491,39 @@ You can also install the repo's `dsh-plugin/` directory locally (Plugins → add
 
 ## How it works
 
+**2.0 default (fast mode, <5 s, text only, no render)**:
+
 ```
 ① resolve input → platform adapter (BV / local file / URL)
-② metadata (pages / duration / resolution)
-③ time range (--from/--to)
-④ frame aspect → per-grid token estimate (portrait is 3× landscape!)
-⑤ scene detection (one ffmpeg decode at 320p) → content change rate
-⑥ subtitle decision: official > transcript > burnt-in band > pixels only
-⑦ danmaku (Bilibili): hotspots (audience highlights) + low-activity segments (multiple signals)
-⑧ semantic shifts (optional): embeddings + change-point detection → topic shifts
+② metadata (pages / duration / resolution) + time range (--from/--to)
+③ subtitle fallback chain: translated > official original > whisper transcript > burnt-in band (source tagged)
+④ danmaku (Bilibili): low-activity segments (density valleys) + ad-keyword highlights (pure hints) + hotspots
+⑤ semantic shifts (optional): pure-JS lexical (char-bigram) or embedding-enhanced
+⑥ segment cards: 4-min segments + subtitle skeleton (four laws) + danmaku emotion + evidence availability
+⑦ output: manifest (schemaVersion 2) + plan.json + report.html (zero jpg)
+```
+
+**standard path (`--standard`, full collection + grids)**:
+
+```
+⑧ scene detection (one ffmpeg decode at 320p) → content change rate
 ⑨ density decision: change rate → target frame interval (4/6/9/13 s)
 ⑩ grid-count decision: density need vs budget cap (hard maximum 12)
-⑪ layout: segment → pick frames (even-spacing skeleton + snap to scene changes) → grids
+⑪ layout: segment → pick frames (even-spacing skeleton + single-tier snap 0.3 + low-activity down-weight w=0.3) → grids
 ⑫ refine suggestions: scene changes + danmaku hotspots + semantic shifts, skipping low-activity segments
+```
+
+**On-demand render (`render --plan`)**:
+
+```
+⑬ track: coarse (4 min/frame) / algorithm (single-tier snap + down-weight) / adaptive (by type) / lowconf
+⑭ render selected segments from plan.json, lazily
 ```
 
 ### Design notes
 
 **Why "even spacing + snapping" instead of pure keyframes?**
-Pure even spacing → misses key moments that flash for only a second or two; pure keyframes → transitions all cluster in the intro and the middle goes empty. The mix: even spacing guarantees coverage, and each base point snaps to a scene change within ±half a cell.
+Pure even spacing → misses key moments that flash for only a second or two; pure keyframes → transitions all cluster in the intro and the middle goes empty. The mix: even spacing guarantees coverage, and each base point snaps to a scene change within ±half a cell. 0.2 verified the three-tier snap ladder is unnecessary: a single threshold 0.3 is enough (93% of segments never drop a tier).
 
 **Why not OCR the subtitle band?**
 Chinese OCR is error-prone on low resolution and fancy layouts. Slicing the band off and letting a multimodal model read it directly is more accurate at similar cost. The price is "one subtitle line occupies a grid width", so only the subtitle region is sliced, stacked vertically.
@@ -528,8 +531,8 @@ Chinese OCR is error-prone on low resolution and fancy layouts. Slicing the band
 **Why can danmaku participate in frame picking?**
 Bilibili danmaku density is itself a content signal. Measured on a 40-minute video: the low-activity segment had only **31%** of the average density (viewers skip), while the most excited moments had 3–5×.
 
-**Why can low-activity segments not occupy frames?**
-"Compressing" low-activity segments out of the timeline and redistributing the remaining effective time — the grid count stays the same, content density rises. Measured on one grid: after skipping 118 seconds of ads, the average frame interval dropped from 22.1 s to **8.3 s**.
+**Why down-weight low-activity segments instead of skipping?**
+Low-activity spans (density valleys) get sampling density ×0.3 (`FISHEYE_LOW_ACTIVITY_WEIGHT`), content spans stay at 1.0 — a false positive only down-weights (recoverable), while skipping deletes a whole span (catastrophic). Down-weighting applies only to render's algorithm track; the text-only pipeline just flags a boolean `lowActivity` for the agent.
 
 **Why is semantic segmentation not done by an LLM?**
 Embedding similarity + change-point detection over subtitle/transcript text finds "topic shift" points with zero tokens and pure CPU. Semantic shifts feed refine suggestions as a "structural signal" and are not merged into geometry (geometry is a "content signal", semantics is a "structural signal" — different in nature).
@@ -541,8 +544,9 @@ Embedding similarity + change-point detection over subtitle/transcript text find
 
 | Stage | Time | Notes |
 |---|---|---|
-| **auto full pipeline** | **75–83 s** | scene detection + subtitle/danmaku APIs + semantic + 1 grid |
-| ├ scene detection (bottleneck) | ~72 s | one full 320p ffmpeg decode, ~95% of the run |
+| **auto (fast text mode, default)** | **~1.2 s** | subtitle/danmaku APIs + segmentation + digest + semantic (skips full scene detection, zero render) |
+| auto (`--standard` full collection) | 75–83 s | scene detection + subtitle/danmaku APIs + semantic + 1 grid |
+| ├ scene detection (standard bottleneck) | ~72 s | one full 320p ffmpeg decode |
 | ├ subtitle / danmaku APIs | ~1–2 s | depends on network and Bilibili response |
 | ├ semantic split (pure JS) | ~0.2 s | 1026 subtitle lines, CPU single core |
 | └ 1 grid (9 frames) | ~1 s | ffmpeg single-frame grabs |
@@ -552,7 +556,7 @@ Embedding similarity + change-point detection over subtitle/transcript text find
 | download 281 MB | 227 s | network-bound, not processing |
 | **peak memory** | **142 MB** (ffmpeg 85 MB) | process-tree RSS |
 
-**Takeaway**: the processing cost of a 40-minute video is almost entirely "scene detection" — one full 320p decode to judge the content change rate. Frame grabbing, grids, semantic and subtitle handling are all seconds. To go faster, restrict the segment with `--from/--to` first.
+**Takeaway**: the 2.0 default fast mode is **<5 s** (skips full scene detection, no render); `--standard`'s cost is almost entirely "scene detection" — one full 320p decode to judge the content change rate. Frame grabbing, grids, semantic and subtitle handling are all seconds. To go faster, restrict the segment with `--from/--to` first.
 
 ### Other hardware (not measured)
 
@@ -580,7 +584,7 @@ Post the numbers in an issue and this table will be updated.
 - **Login required (Bilibili only)**: some videos' subtitles/playback URLs need cookies
 - **Semantic segmentation only works on videos with subtitles/dialogue**: skipped automatically when there are no official subtitles and transcription is unavailable
 - **Ad detection is strongest on Bilibili (danmaku)**: the spoken-word family on danmaku-less platforms is a supplement
-- **Long videos are expensive**: a 40-minute Chinese video's official subtitles are ~12k tokens (English AI subtitles can reach ~50k)
+- **Long videos are expensive**: a 40-minute English AI subtitle track is ~50k tokens full text; 2.0 compresses it to ~1.3k/segment skeletons (full text still written for quoting)
 - **Bilibili APIs change**: `selftest` tells you quickly which piece broke
 
 ### Debug trace (`FISHEYE_TRACE=1`)
@@ -598,7 +602,7 @@ Trace writes to a file and stderr only — stdout (the machine-readable result) 
 ### Tests
 
 ```bash
-node --test --test-concurrency=1 test/          # unit + golden + integration + degradation (211 cases)
+node --test test/                               # unit + golden + integration + degradation (288 cases)
 node --test test/integration.test.mjs           # real CLI end-to-end (local / --smart + trace / selftest / clean)
 node --test test/degradation.test.mjs           # degradation: missing ffmpeg / broken file / bad args / bad manifest
 ```
@@ -608,12 +612,12 @@ Degradation cases assert a clear error, a non-zero exit code, and no uncaught st
 ## Development
 
 ```bash
-node --test --test-concurrency=1 test/   # unit tests + golden suite (real video samples, runs offline)
+node --test test/                        # unit tests + golden suite (real video samples, runs offline)
 node test-danmaku-filter.js              # danmaku filter rules (51 cases)
 node fisheye.mjs selftest --deep         # self-check including frame extraction / subtitle band / OCR / transcription / semantic
 ```
 
-Current: **211 tests** (208 passing + 3 skipped) + **51 danmaku filter cases**; ad detection has **8 hand-labeled ground-truth videos**.
+Current: **288 tests** (285 passing + 3 skipped) + **51 danmaku filter cases**; low-activity ground truth has **27 hand-labeled videos** (`test/golden/low-activity/`).
 
 Project structure:
 
@@ -627,11 +631,18 @@ Project structure:
 | `lib/bili.mjs` | Bilibili pure functions + API (video info / WBI signing / official subtitles / danmaku) |
 | `lib/frame.mjs` | frame extraction and timestamp selection (scene detection / subtitle-band location / single-frame grab) |
 | `lib/band.mjs` | pure-JS subtitle-band detection (PGM row gradients + cross-frame quantiles) |
-| `lib/danmaku.mjs` | danmaku hotspot summary + low-activity detection entry re-export (implementation in `lib/signals/`) |
-| `lib/signals/` | ad signal sources (five danmaku-family + two subtitle-family, pluggable registry + orchestrator) |
+| `lib/danmaku.mjs` | danmaku hotspot summary + low-activity/ad-keyword entry re-export (implementation in `lib/signals/`) |
+| `lib/signals/` | ad signals (two: `density` low-activity detection + `keywords` ad-keyword highlights) |
+| `lib/subs-digest.mjs` | subtitle digest (four laws + fact/op dual channel + compressibility) |
+| `lib/emotion.mjs` | dual emotion scores (subtitle/danmaku + √ compression + top samples) |
+| `lib/segments.mjs` | 4-min segmentation + segment cards (second-level timestamps) |
+| `lib/tracks.mjs` | image tracks (coarse/algorithm/adaptive + single-tier snap + w=0.3 down-weight) |
+| `lib/video-type.mjs` | video type detection (music/slides/screen/foreign) |
+| `lib/render.mjs` | lazy render from plan.json (`render --plan`) |
+| `lib/auto-text.mjs` | fast text mode (`auto` default: text evidence only, no render) |
 | `lib/semantic.mjs` | semantic capability probing + subprocess invocation (independent Python module) |
 | `lib/semantic-core.mjs` | pure-JS semantic fallback (char-bigram lexical drift) |
-| `lib/collect.mjs` | collection layer (download/metadata/subtitles/danmaku/ads/semantic → ctx) |
+| `lib/collect.mjs` | collection layer (download/metadata/subtitles/danmaku/low-activity/semantic → ctx) |
 | `lib/planner.mjs` | planning (density / grid count / budget) |
 | `lib/executor.mjs` | refine suggestions (geometry picks + danmaku hotspots + semantic shifts merged) |
 | `lib/stages.mjs` | subcommand orchestration (auto / grid / subs / refine / grab / local / ...) |
@@ -639,7 +650,7 @@ Project structure:
 | `lib/trace.mjs` | debug trace (`FISHEYE_TRACE`) |
 | `dsh-plugin/` | DSH plugin wrapper (`video_understand` tool) |
 | `semantic/` | semantic reference implementation (`cli.py` + `requirements.txt`, fastembed + ruptures) |
-| `test/` | `node:test` unit tests + golden suite (`fixtures/` / `ad-truth/`) + integration/degradation |
+| `test/` | `node:test` unit tests + golden suite (`fixtures/` / `low-activity/`) + integration/degradation |
 | `tools/` | benchmark script (`bench.ps1`: per-stage time + peak memory) |
 | `docs/` | design/config/review docs (ZH/EN) + demo GIFs + demo-generation scripts |
 | `.github/` | CI workflow (`ci.yml`) + issue template |

@@ -23,6 +23,8 @@ fisheye 从「全量读图 + 字幕全文」（40 分钟视频 ~51k~95k token）
 
 **新增模块**：`lib/subs-digest.mjs`（摘要四铁律 + fact/op 双通道 + 可压缩性）、`lib/emotion.mjs`（情绪双分数 + 分位数 + √压缩 + top 样本）、`lib/segments.mjs`（4 分钟切段 + 段卡片秒级时间戳）、`lib/tracks.mjs`（coarse/algorithm/adaptive 三轨 + 单档吸附 + w=0.3 降权）、`lib/video-type.mjs`（music/slides/screen/foreign 类型判定）、`lib/render.mjs`（render --plan 惰性渲染）、`lib/auto-text.mjs`（fast 文本模式）。
 
+**字幕降级链四级闭合**：中文翻译轨 → 官方原文轨 → whisper 转写 → 烧录字幕带（`source: 'band'`，图默认不生成）。纯函数 `selectSubsLines` 可单测。
+
 **manifest**：`schemaVersion: 2`；字段 `adSegments` → `lowActivitySegments` + `adKeywordHits`；旧 manifest（schemaVersion 1）被明确拒绝并提示重跑。
 
 **auto 默认 fast 档**：跳过全片场景检测（<5s，缓存命中）；`--standard` 走旧抽帧路径（完整采集 + 拼图）。
@@ -38,7 +40,7 @@ fisheye 从「全量读图 + 字幕全文」（40 分钟视频 ~51k~95k token）
 
 ### Tests
 
-- 全量 **279 用例**（276 通过 + 3 跳过），基线 242 → 279。danmaku-filter 51/51。
+- 全量 **288 用例**（285 通过 + 3 跳过），基线 242 → 288。danmaku-filter 51/51。
 
 ## [1.0.29] - 2026-11-18
 
