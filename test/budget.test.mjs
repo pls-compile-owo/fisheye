@@ -15,17 +15,17 @@ function withEnv(overrides, fn) {
   }
 }
 
-test('默认值：grid/subs/fine = 1200/1000/1300', () => {
+test('默认值：grid/subs/fine = 1024（0.5 改价：Flash 每图上限 1024）', () => {
   withEnv({}, () => {
-    assert.equal(estimateTokens('grid'), 1200)
-    assert.equal(estimateTokens('subs'), 1000)
-    assert.equal(estimateTokens('fine'), 1300)
-    assert.equal(estimateTokens('fine', 3), 3900)
+    assert.equal(estimateTokens('grid'), 1024)
+    assert.equal(estimateTokens('subs'), 1024)
+    assert.equal(estimateTokens('fine'), 1024)
+    assert.equal(estimateTokens('fine', 3), 3072)
   })
 })
 
-test('COST 默认表与旧版一致', () => {
-  assert.deepEqual({ ...COST }, { grid: 1200, subs: 1000, fine: 1300 })
+test('COST 默认表与 2.0 口径一致', () => {
+  assert.deepEqual({ ...COST }, { grid: 1024, subs: 1024, fine: 1024 })
 })
 
 test('环境变量覆盖单张成本', () => {
@@ -38,14 +38,14 @@ test('环境变量覆盖单张成本', () => {
 test('FISHEYE_TOKEN_MODEL：qwen/gemini/数字', () => {
   withEnv({ FISHEYE_TOKEN_MODEL: 'qwen' }, () => {
     assert.ok(modelFactor() > 1)
-    assert.ok(estimateTokens('grid') > 1200)
+    assert.ok(estimateTokens('grid') > 1024)
   })
   withEnv({ FISHEYE_TOKEN_MODEL: 'gemini' }, () => {
     assert.ok(modelFactor() < 1)
   })
   withEnv({ FISHEYE_TOKEN_MODEL: '2' }, () => {
     assert.equal(modelFactor(), 2)
-    assert.equal(estimateTokens('grid'), 2400)
+    assert.equal(estimateTokens('grid'), 2048)
   })
 })
 

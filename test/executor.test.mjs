@@ -14,7 +14,7 @@ function makeManifest(overrides = {}) {
     subsCovered: true,
     subs: null,
     danmaku: { hot: [{ start: 100, count: 5, samples: ['a', 'b'] }] },
-    adSegments: [],
+    lowActivitySegments: [],
     chunks: [{
       chunk: 1,
       grid: '3x3',
@@ -37,12 +37,12 @@ test('geometricPick：高变化格与弹幕热区都入选', () => {
   for (let i = 1; i < picks.length; i++) assert.ok(picks[i].t >= picks[i - 1].t)
 })
 
-test('geometricPick：高置信度广告段被排除', () => {
+test('geometricPick：低活跃段被排除', () => {
   const manifest = makeManifest({
-    adSegments: [{ from: 30, to: 40, confidence: 'high' }],
+    lowActivitySegments: [{ from: 30, to: 40, lowDensity: true }],
   })
   const picks = geometricPick(manifest)
-  // cell 4 在 t=30（广告段内）→ 不应出现
+  // cell 4 在 t=30（低活跃段内）→ 不应出现
   assert.ok(!picks.some((p) => Math.round(p.t) >= 30 && Math.round(p.t) <= 40 && p.source.includes('几何规则')))
 })
 

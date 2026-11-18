@@ -76,19 +76,18 @@ test('url 适配器：时间戳/分享参数归一化后 id 稳定', () => {
   assert.equal(b.id, c.id, '分享参数不应影响 id')
 })
 
-test('source 契约：meta/media/subtitles/danmaku 都是函数；local/url 带 adDetector', () => {
+test('source 契约：meta/media/subtitles/danmaku 都是函数；local/url 无弹幕不做广告检测', () => {
   const tmp = path.join(os.tmpdir(), `fisheye-platform-test2-${process.pid}.mp4`)
   fs.writeFileSync(tmp, 'fake')
   try {
     const localSrc = resolveSource(tmp)
     for (const k of ['kind', 'id', 'label']) assert.ok(localSrc[k] !== undefined)
     for (const fn of ['meta', 'media', 'subtitles', 'danmaku']) assert.equal(typeof localSrc[fn], 'function')
-    assert.ok(localSrc.adDetector)
-    assert.ok(Array.isArray(localSrc.adDetector.signals))
+    assert.equal(localSrc.adDetector, null, 'local 无弹幕 → 不做广告检测（设计 05 §7.5）')
 
     const urlSrc = resolveSource('https://example.com/v?id=9')
     for (const fn of ['meta', 'media', 'subtitles', 'danmaku']) assert.equal(typeof urlSrc[fn], 'function')
-    assert.ok(urlSrc.adDetector)
+    assert.equal(urlSrc.adDetector, null, 'url 无弹幕 → 不做广告检测（设计 05 §7.5）')
   } finally {
     fs.unlinkSync(tmp)
   }

@@ -7,7 +7,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { FFMPEG } from '../lib/env.mjs'
-import { collectSignals, detectAds } from '../lib/collect.mjs'
+import { collectSignals, detectLowActivityFor } from '../lib/collect.mjs'
 
 // 生成一个 3 秒、64x64 的测试视频（无字幕、无音轨）
 function makeFakeVideo() {
@@ -50,7 +50,8 @@ test('collectSignals：无字幕无弹幕的本地视频——基础 ctx 字段�
   assert.ok(Array.isArray(ctx.scenes))
   assert.ok(Array.isArray(ctx.danmaku))
   assert.ok(Array.isArray(ctx.dmHot))
-  assert.ok(Array.isArray(ctx.adSegs))
+  assert.ok(Array.isArray(ctx.lowActivitySegs))
+  assert.ok(Array.isArray(ctx.adHits))
   assert.equal(ctx.pageNo, 1)
 })
 
@@ -86,24 +87,24 @@ test('collectSignals：合法区间生成 range 与区间时长', { skip }, asyn
   assert.equal(ctx.duration, 2)
 })
 
-test('detectAds：adDetector 为 null 时不判广告', async () => {
-  const segs = await detectAds({ adDetector: null }, { danmaku: [], duration: 100, subtitles: null })
+test('detectLowActivityFor：adDetector 为 null 时不判', async () => {
+  const segs = await detectLowActivityFor({ adDetector: null }, { danmaku: [], duration: 100 })
   assert.deepEqual(segs, [])
 })
 
-test('detectAds：自定义 detect 函数会被调用', async () => {
-  const fake = [{ from: 10, to: 20, ts: '00:10-00:20', dur: 10, confidence: 'high', keywords: [], lowDensity: 0.5 }]
-  const segs = await detectAds(
+test('detectLowActivityFor：自定义 detect 函数会被调用', async () => {
+  const fake = [{ from: 10, to: 20, ts: '00:10-00:20', dur: 10, lowDensity: true, sample: [] }]
+  const segs = await detectLowActivityFor(
     { adDetector: { detect: async () => fake } },
-    { danmaku: [], duration: 100, subtitles: null }
+    { danmaku: [], duration: 100 }
   )
   assert.deepEqual(segs, fake)
 })
 
-test('detectAds：无自定义 detect 时走核心信号（无弹幕/字幕 → 空）', async () => {
-  const segs = await detectAds(
-    { adDetector: { keywords: [], signals: [] } },
-    { danmaku: [], duration: 100, subtitles: null }
+test('detectLowActivityFor：无自定义 detect 时走核心密度低谷（无弹幕 → 空）', async () => {
+  const segs = await detectLowActivityFor(
+    { adDetector: { adKeywords: /金主/ } },
+    { danmaku: [], duration: 100 }
   )
   assert.deepEqual(segs, [])
 })

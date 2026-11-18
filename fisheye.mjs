@@ -22,6 +22,8 @@ import { PKG_DIR, WS, CFG_FILE, FFMPEG, CRED } from './lib/env.mjs'
 import { parseTime, num, pageNum, gridStr } from './lib/util.mjs'
 import { t } from './lib/i18n.mjs'
 import { stageAuto, stageGrid, stageSubs, stageSelftest, stageRefine, stageGrab, stageLocal, stageTranscribe, stageClean, stageOcr, stageUrl, stageBatch } from './lib/stages.mjs'
+import { stageAutoText } from './lib/auto-text.mjs'
+import { stageRender } from './lib/render.mjs'
 import { resolveSource } from './lib/platforms/index.mjs'
 import { traceStart, traceFinish } from './lib/trace.mjs'
 
@@ -47,15 +49,19 @@ const opt = (name, dflt) => {
 }
 
 // auto 决策管线（完整采集：多路信号 + 字幕带 + 广告 + 语义）。local/url 的 --smart 与 auto 共用。
-async function runAuto(source) {
+async function runAuto(source, forceStandard = false) {
   traceStart(source.id)
   let ok = false
   try {
+  // 参数校验统一前置：无论 fast/standard 都要校验（非法值报错，不因模式而吞掉）
   const d = opt('density', null)
-  await stageAuto(source,
-    num(opt('budget', 20000), 'budget', { min: 2000, max: 200000 }),
-    {
-      density: d === null ? null : num(d, 'density', { min: 0.5, max: 60 }),
+  const budget = num(opt('budget', 20000), 'budget', { min: 2000, max: 200000 })
+  const density = d === null ? null : num(d, 'density', { min: 0.5, max: 60 })
+  const standard = forceStandard || argv.includes('--standard') || argv.includes('--render')
+  if (standard) {
+    // 标准模式（1.0.29 抽帧路径）：完整采集 + 场景检测 + 拼图
+    await stageAuto(source, budget, {
+      density,
       page: pageNum(opt('p', null)),
       from: parseTime(opt('from', null), 'from'),
       to: parseTime(opt('to', null), 'to'),
@@ -65,6 +71,16 @@ async function runAuto(source) {
       resume: argv.includes('--resume'),
       force: argv.includes('--force'),
     })
+  } else {
+    // fast 文本模式（2.0 默认）：跳过场景检测，只产文本证据，不渲染
+    await stageAutoText(source, {
+      page: pageNum(opt('p', null)),
+      from: parseTime(opt('from', null), 'from'),
+      to: parseTime(opt('to', null), 'to'),
+      audio: argv.includes('--audio') ? true : (argv.includes('--no-audio') ? false : undefined),
+      audioLang: opt('lang', null),
+    })
+  }
     ok = true
   } finally {
     traceFinish(ok)
@@ -72,7 +88,7 @@ async function runAuto(source) {
 }
 
 // 需要「平台源」的命令：解析输入（BV / 文件 / URL）→ VideoSource 契约对象
-const SOURCE_STAGES = new Set(['auto', 'grid', 'subs', 'refine', 'grab', 'transcribe'])
+const SOURCE_STAGES = new Set(['auto', 'grid', 'subs', 'refine', 'grab', 'transcribe', 'render'])
 let source = null
 if (SOURCE_STAGES.has(stage) && input && !input.startsWith('--')) {
   source = resolveSource(input)
@@ -96,10 +112,10 @@ if (stage === 'local') {
   }
   try {
     if (argv.includes('--smart')) {
-      // --smart：走 auto 完整采集管线（多路信号 + 字幕带 + 广告 + 语义），而非纯均匀抽帧
+      // --smart：走 auto 完整采集管线（多路信号 + 场景检测 + 字幕带 + 广告 + 语义），而非纯均匀抽帧
       const smartSource = resolveSource(fileArg)
       if (!smartSource) { console.error(t('err.local.usage')); process.exit(2) }
-      await runAuto(smartSource)
+      await runAuto(smartSource, true)
     } else {
       await stageLocal(fileArg, {
         grid: opt('grid', '3x3'),
@@ -202,6 +218,12 @@ try {
     await stageSelftest({ deep: argv.includes('--deep') })
   } else if (stage === 'auto') {
     await runAuto(source)
+  } else if (stage === 'render') {
+    await stageRender(source, {
+      track: opt('track', 'coarse'),
+      segments: opt('segments', null),
+      page: pageNum(opt('p', null)),
+    })
   } else if (stage === 'refine') {
     await stageRefine(source, { template: argv.includes('--template'), decisions: opt('decisions', null) })
   } else if (stage === 'grid') {

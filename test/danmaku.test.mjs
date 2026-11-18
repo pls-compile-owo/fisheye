@@ -1,7 +1,7 @@
-// danmaku 模块单测：广告段检测 / 热区摘要 / 过滤规则
+// danmaku 模块单测：低活跃检测 / 广告词高光 / 热区摘要 / 过滤规则
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { AD_SEGMENT_SIGNAL, detectAdSegments, detectAdSegmentsCore, DEFAULT_KEYWORDS, summarizeDanmaku } from '../lib/danmaku.mjs'
+import { AD_SEGMENT_SIGNAL, detectLowActivity, adKeywordHits, summarizeDanmaku } from '../lib/danmaku.mjs'
 import { spamReason, filterDanmaku } from '../danmaku-filter.mjs'
 
 test('AD_SEGMENT_SIGNAL：命中广告关键词', () => {
@@ -11,42 +11,31 @@ test('AD_SEGMENT_SIGNAL：命中广告关键词', () => {
   assert.ok(!AD_SEGMENT_SIGNAL.test('这个视频真好看'))
 })
 
-test('detectAdSegments：空 / 短视频返回空数组', () => {
-  assert.deepEqual(detectAdSegments([], 300), [])
-  assert.deepEqual(detectAdSegments([{ t: 1, text: 'x' }], 60), [])
-})
-
-test('detectAdSegments：密度低谷 + 广告词 → 识别出段', () => {
-  // 300 秒视频：中段 100~160s 弹幕稀少，其余密集
+test('detectLowActivity：密度低谷段被检出（含 sample 证据）', () => {
   const danmaku = []
   for (let t = 0; t < 300; t += 2) {
-    if (t >= 100 && t < 160) continue
+    if (t >= 100 && t < 160) continue // 100-160s 低活跃
     danmaku.push({ t, text: '666' })
   }
-  danmaku.push({ t: 120, text: '恰饭时间' })
-  const segs = detectAdSegments(danmaku, 300)
-  assert.ok(Array.isArray(segs))
+  const segs = detectLowActivity(danmaku, 300)
   assert.ok(segs.length >= 1)
   for (const s of segs) {
     assert.ok(s.to > s.from)
     assert.ok(s.ts.includes('-'))
-    assert.ok(['high', 'low'].includes(s.confidence))
+    assert.equal(s.lowDensity, true)
+    assert.ok(Array.isArray(s.sample))
   }
 })
 
-test('detectAdSegmentsCore：无弹幕 + 字幕广告词 → 台词族标 high（confidence 修复）', () => {
-  const subs = [
-    { from: 10, content: '点击下方链接下单' },
-    { from: 15, content: '领取优惠券' },
-    { from: 20, content: '限时折扣' },
+test('adKeywordHits：匹配 + 去重 + 限量', () => {
+  const dm = [
+    { t: 10, text: '感谢金主' },
+    { t: 20, text: '感谢金主' },
+    { t: 30, text: '恰饭' },
   ]
-  const segs = detectAdSegmentsCore(
-    { danmaku: [], duration: 300, subtitles: subs },
-    DEFAULT_KEYWORDS,
-    ['sub-keywords'],
-  )
-  assert.ok(segs.length >= 1)
-  for (const s of segs) assert.equal(s.confidence, 'high')
+  const hits = adKeywordHits(dm)
+  assert.equal(hits.length, 2)
+  assert.equal(hits[0].text, '感谢金主')
 })
 
 test('summarizeDanmaku：空输入返回 null', () => {
