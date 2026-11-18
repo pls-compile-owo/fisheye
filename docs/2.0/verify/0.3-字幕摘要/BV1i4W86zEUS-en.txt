@@ -1,0 +1,73 @@
+# 如何盗走《蒙娜丽莎》？【硬核狠人92】 (2385s, en, 合并后 890 句)
+
+--- 段 1  0:00-4:00  4915 字  ~129 token ---
+head : As he drew closer to his destination, Just as Béroud took out his paintbrush, ready to get to work, But he suddenly realized, 'Wait a minute... why is this wall empty? Where's the painting?'
+info : He rushed to find the security guard in the Salon Carré and asked, "Bopardan..." Where's the Mona Lisa?
+kw   : roud, bopardan, today, where's, art, century
+num  : 1911
+claim: Impressionism, Fauvism, styles like Symbolism, Primitivism, and so on.
+
+--- 段 2  4:00-8:00  6620 字  ~118 token ---
+head : An unbalanced diet over the long term and can also make it harder to manage your blood lipids.
+info : So, in addition to adjusting your diet, and getting regular exercise, Taking some fish oil can help too.
+kw   : fish, oil, diet, blood, lipids, omega-
+num  : 
+claim: An unbalanced diet over the long term and can also make it harder to manage your blood lipids.
+
+--- 段 3  8:00-12:00  5693 字  ~137 token ---
+head : Lépine quickly asked, "How can you tell?" Bennett explained, 「Both the glass case and the frame are incredibly tricky to take apart and put back together.
+info : Another officer came in to report. "Chief..." The newspaper already knows the Mona Lisa is gone.
+kw   : gone, frame, report, keep, tell, glass
+num  : 
+claim: 「So why did you wait until noon to report it?」 Bennett said, The guard thought the painting had been taken to the photo studio for a shoot.
+
+--- 段 4  12:00-16:00  6023 字  ~95 token ---
+head : In the history of criminal investigation in France, and indeed, all of Europe, Born in 1853, Bertillon...
+info : And so, this system became known as the "Bertillonage." From that point on, Bertillon officially stepped into the field of criminal investigation.
+kw   : criminal, station, europe, became, point, arthur
+num  : 1902, 1853
+claim: His methods of criminal investigation were also dismissed as pseudoscience.
+
+--- 段 5  16:00-20:00  5811 字  ~106 token ---
+head : And that young man, he was quite a looker! So handsome, like a young John Jr.
+info : Legasov shook his head. "No, I don't know him." With so many people at the Louvre, how could I possibly know everyone?
+kw   : legasov, man, young, mean, think, don't
+num  : 
+claim: And that young man, he was quite a looker! So handsome, like a young John Jr.
+
+--- 段 6  20:00-24:00  5953 字  ~103 token ---
+head : The police in the United States claimed to have received reliable intelligence on the German ocean liner, the SS Kaiser Wilhelm II.
+info : As the saying goes, 'Sitting in Berlin, but the blame comes from Paris.' When the news broke, Even Wilhelm II was dumbfounded.
+kw   : wilhelm, couldn't, steal, newspaper, thief, united
+num  : 
+claim: And yet, they couldn't find a single clue for so long.
+
+--- 段 7  24:00-28:00  6267 字  ~114 token ---
+head : By noon that day, a rumor was spreading all over the city: Picasso had stolen the Mona Lisa.
+info : When asked if he had bought any stolen goods, Picasso was so baffled he didn't know whether to laugh or cry.
+kw   : apollinaire, stolen, statue, spacetourer, thief, picasso
+num  : 1911
+claim: By noon that day, a rumor was spreading all over the city: Picasso had stolen the Mona Lisa.
+
+--- 段 8  28:00-32:00  5932 字  ~118 token ---
+head : Before long, he received a letter signed by a letter from "Leonardo da Vinci V." The letter read, "The stolen masterpiece by DaVinci Resolve, the Mona Lisa, is in my possession." Since it wa
+info : In the letter, This Leonardo da Vinci, however, made no mention of the price.
+kw   : leonardo, letter, vinci, later, don't, november
+num  : 1912, 1913
+claim: Seeing Jerry being so tough, Leonardo da Vinci chickened out.
+
+--- 段 9  32:00-36:00  5536 字  ~170 token ---
+head : "I am Leonardo da Vinci." I've brought the Mona Lisa with me.' Jerry was stunned. "Whoa, you're actually here?" Jerry quickly said, "Look, you can see I'm busy." Besides, I'm not much of an 
+info : An hour later, the King of Italy, the Holy Pope, and the French ambassador to Italy.
+kw   : bojji, italy, art, minutes, vinci, leonardo
+num  : 1881, 1907, 1908, 1909
+claim: Hence, it was also known as the "Treasure House of Plunder." So, when he saw all these Italian treasures in the Louvre, Vincenzo Peruggia, who had alw
+
+--- 段 10  36:00-39:45  5514 字  ~143 token ---
+head : When Legasov appeared Vincenzo Peruggia said calmly, "Could you open this for me?" Legasov glanced at the door. "Broken again." Vincenzo Peruggia nodded, "Mhm." Legasov took out his keys and
+info : Legasov said as he was leaving, "Hey, when you go out, leave the door cracked open a bit." and don't lock anyone in again." And just like that, Vincenzo Peruggia had completed the theft.
+kw   : france, door, italy, legasov, open, court
+num  : 1911, 1914
+claim: Meanwhile, in Italy, Vincenzo Peruggia was also brought before a court.
+
+# 合计 ~1233 token / 原文 1178 行 57976 字

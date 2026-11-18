@@ -1,0 +1,79 @@
+# 美国“杰斐逊州”在哪里？【神奇组织51】 (2465s, en, 合并后 1064 句)
+
+--- 段 1  0:00-4:00  5258 字  ~96 token ---
+head : So, from a young age, Young Gilbert was all about climbing mountains, scaling trees, and just being a total rascal.
+info : At the age of 12, Young Gilbert had now reached working age.
+kw   : young, town, gilbert, company, car, age
+num  : 2021, 1886, 1898
+claim: So he had to borrow his mother-in-law's car just to get by.
+
+--- 段 2  4:00-8:00  6392 字  ~148 token ---
+head : The biggest advantage Sister Miao was so thrilled she practically purred, So, to show our appreciation, During our 618 Grand Sale and Father's Day event, To our fans who have always supporte
+info : In 1920, Gable established his own film company in Philadelphia.
+kw   : massage, film, radio, advertising, miao, miaojie
+num  : 1920, 1927, 1933, 1856
+claim: The biggest advantage Sister Miao was so thrilled she practically purred, So, to show our appreciation, During our 618 Grand Sale and Father's Day eve
+
+--- 段 3  8:00-12:00  5332 字  ~58 token ---
+head : But Evans's account only mentioned...
+info : He discovered Dr. Evans's account, which stated that...
+kw   : mountains, evans, washington, evans's, village, account
+num  : 1935, 1822
+claim: I'm sorry, This village is just so small.
+
+--- 段 4  12:00-16:00  5621 字  ~115 token ---
+head : Life is just one thing after another... after another... after another...
+info : This village, Port Orford, was small, But the villagers were simple and welcoming.
+kw   : village, come, evans, another, resources, girl
+num  : 1935
+claim: that with so many mineral resources near Port Orford, the area remained remote and impoverished.
+
+--- 段 5  16:00-20:00  5708 字  ~91 token ---
+head : If we can just get the railways and roads built, Then I'll have the money to build a port!
+info : Besides the port, He also built a city hall and installed water and power systems.
+kw   : built, railway, money, city, build, sprague
+num  : 1938
+claim: Besides the port, He also built a city hall and installed water and power systems.
+
+--- 段 6  20:00-24:00  5494 字  ~84 token ---
+head : Tomorrow, I'll write a letter to Governor Culbert Olson of California.
+info : With public opinion reaching a fever pitch, In the autumn of 1940, He sent a letter to California Governor Olson.
+kw   : county, curry, letter, i'll, olson, idea
+num  : 1940
+claim: Why is it so hard to get things going?
+
+--- 段 7  24:00-28:00  5410 字  ~100 token ---
+head : So, if you take a look around, you'll find that...
+info : You'll find that All it takes is someone to stir things up, chances are, they'd also vote to join the state of Oregon.
+kw   : take, olson, find, independence, matter, pretty
+num  : 1940, 1941
+claim: You'll find that All it takes is someone to stir things up, chances are, they'd also vote to join the state of Oregon.
+
+--- 段 8  28:00-32:00  6070 字  ~87 token ---
+head : We'll start with the six counties along the border between the two states.
+info : to abide by federal laws, assuming a share of the federal debt, and so on.
+kw   : counties, enough, federal, border, population, states
+num  : 1941
+claim: to abide by federal laws, assuming a share of the federal debt, and so on.
+
+--- 段 9  32:00-36:00  5307 字  ~73 token ---
+head : Gable announced that they would officially secede from the Union on November 27th.
+info : The time is November 1941.
+kw   : november, secede, union, car, road, flyer
+num  : 1941
+claim: So where is everyone? Not a single car in sight.
+
+--- 段 10  36:00-40:00  6049 字  ~129 token ---
+head : Thanks to Delaplain's reporting, The State of Jefferson independence movement also skyrocketed into the mainstream.
+info : After witnessing the whole thing, That very day, De La Plan wrote up a feature story on the State of Jefferson independence movement.
+kw   : independence, patrol, movement, december, war, we'll
+num  : 1941
+claim: Thanks to Delaplain's reporting, The State of Jefferson independence movement also skyrocketed into the mainstream.
+
+--- 段 11  40:00-41:05  1252 字  ~75 token ---
+head : However, as peace settled in and American manufacturing began to decline, As the 21st century began, This land of ice and snow was forgotten once again.
+info : After all the twists and turns, Nearly a century later, It was as if everything had come full circle.
+kw   : began, necessary, everything, remembered, boom, full
+num  : 
+
+# 合计 ~1056 token / 原文 1333 行 57624 字

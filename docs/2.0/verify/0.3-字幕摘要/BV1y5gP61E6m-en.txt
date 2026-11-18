@@ -1,0 +1,79 @@
+# 法国最有松弛感的劫案是哪起？【硬核狠人91】 (2469s, en, 合并后 841 句)
+
+--- 段 1  0:00-4:00  5025 字  ~93 token ---
+head : 「Then why won't the door open?」 The locksmith said coldly, 「So, it's a problem with the door itself。」 Bigu pressed, "And then what?" The locksmith threw his hands in the air.
+info : 「So, David and I just got to the door, We followed the procedure, inserting the key to open the door.
+kw   : door, wall, bigu, open, lock, hole
+num  : 1976
+claim: Several of the workers were so exhausted they nearly passed out.
+
+--- 段 2  4:00-8:00  6200 字  ~130 token ---
+head : Albert was stunned. "No..." And they were drinking wine while they did it?" The assistant added, "And it wasn't just wine." Plus, two picnic tables.
+info : The assistant said, "They must have transported it in a kayak, moving upstream from the Paillon River." Albertin said, "Truly creative. What else we got?" The assistant glanced at the list.
+kw   : shave, foil, plus, assistant, albert, i've
+num  : 
+claim: And with the Qixi Festival just around the corner, And I've also lined up a sweet deal for all of you.
+
+--- 段 3  8:00-12:00  5329 字  ~114 token ---
+head : 「So much stuff, and not a single clue to be found...」 The assistant turns on the projector.
+info : Albertine asked, "Did the forensics team manage to retrieve what was written?" What did they write?
+kw   : clue, assistant, single, albertine, asked, robbers
+num  : 1976
+claim: 「So much stuff, and not a single clue to be found...」 The assistant turns on the projector.
+
+--- 段 4  12:00-16:00  5688 字  ~167 token ---
+head : “Société Générale’s case still isn't closed.” Murray said, "Chief?" It seemed as if they'd never find a single clue in their entire lives.
+info : If we question them one by one, we're bound to find something.' Albertin added, "And what about fencing the loot?" With so many people involved, hiding the loot after the heist would be impo
+kw   : family, loot, end, case, chief, single
+num  : 1976, 1932, 1950, 1953
+claim: If we question them one by one, we're bound to find something.' Albertin added, "And what about fencing the loot?" With so many people involved, hidin
+
+--- 段 5  16:00-20:00  5686 字  ~110 token ---
+head : As the general manager of the Nice branch of the Société Générale bank, Bigourd says, "Spaggiari..." The vintage red bricks they're using for the villa are pretty run-of-the-mill, really.
+info : Thanks to his time in prison, where he'd learned how to work with locks, Before long, Spaggiari landed a job at a company in Senegal.
+kw   : letter, prison, job, pretty, photography, villa
+num  : 1957, 1959, 1961, 1966, 1972
+claim: He was so bored, he was practically climbing the walls.
+
+--- 段 6  20:00-24:00  6052 字  ~116 token ---
+head : After meticulously refining his plan, Spaggiari was convinced the plan was foolproof.
+info : In the plan, Now, for the 20 people on the team, besides having experience with tunnels, industry experts in welding and demolition, And everyone had to be extremely disciplined and follow o
+kw   : plan, oxygen, task, dig, digging, question
+num  : 1975
+claim: So that was out of the question.
+
+--- 段 7  24:00-28:00  5760 字  ~104 token ---
+head : But what no one expected was that after hearing the plan, although Zampa was deeply impressed by Spaggiari's plan.
+info : However, regarding the team you want to assemble, I'd advise against recruiting from the underworld. The kind of people who are easy to control don't end up in a life of crime.
+kw   : plan, team, underworld, zampa, zampa's, caution
+num  : 1976
+claim: Spaggiari also toyed with the idea of recruiting from the criminal underworld.
+
+--- 段 8  28:00-32:00  5340 字  ~75 token ---
+head : the heist of the century. Enough for you?» But what Spaggiari didn't expect was...
+info : This time, Chief Murray had no choice but to believe it.
+kw   : didn't, believe, crew, alright, heist, chief
+num  : 1976
+claim: The police chief couldn't believe someone could be so brazen.
+
+--- 段 9  32:00-36:00  5736 字  ~166 token ---
+head : If they couldn't find any physical evidence, he couldn't actually be convicted.
+info : Leaning back in his chair, Murray asked, "So, what's your explanation?" Spaggiari smiled and said, "Alright then..." Alright, I admit I was just bragging to the Americans.
+kw   : honor, evidence, interrogation, i'm, couldn't, alright
+num  : 1978
+claim: de Gaulle might not have ended up with a happy ending." Honoré looked puzzled. "That's strange, then." So why would you help the leftists come to powe
+
+--- 段 10  36:00-40:00  5457 字  ~181 token ---
+head : But when the two met for the first time, Pellaud then told him, "Honoré has played you for a fool." Spaggiari was shocked. "No way." But he seemed so sincere.' Pelat was speechless. "Sincere
+info : This had nothing to do with it at all.” Looking at the public opinion poll that Pelat had presented, How dare they try to pull the wool over my eyes with faith?
+kw   : himself, pelat, escape, paris, sincere, later
+num  : 1977, 1979
+claim: But when the two met for the first time, Pellaud then told him, "Honoré has played you for a fool." Spaggiari was shocked. "No way." But he seemed so 
+
+--- 段 11  40:00-41:09  1451 字  ~70 token ---
+head : And so, the man who had never backed down in his life, With his last ounce of strength, to orchestrate his final criminal act.
+info : Late at night, Spaggiari's body was finally brought back to back to his mother, who had been missing him for over a decade.
+kw   : finally, final, son, mother, man, act
+num  : 
+
+# 合计 ~1326 token / 原文 1167 行 57398 字

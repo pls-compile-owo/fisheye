@@ -1,0 +1,73 @@
+# 法国影响力最大的八卦是什么？【神奇组织56】 (2369s, en, 合并后 805 句)
+
+--- 段 1  0:00-4:00  5682 字  ~151 token ---
+head : The Greatest Scandal of Our Time In September 1870, Following the disastrous defeat at the Battle of Sedan, The Second French Empire collapsed.
+info : "The Austro-Hungarian Empire officially considers that it is at war with Serbia." At the same time the telegram was sent, Thousands upon thousands of citizens in Vienna poured out of their h
+kw   : republic, paris, citizens, city, battle, empire
+num  : 1914, 1870, 2016
+claim: like the 'Death Pump' affair, which ended up toppling a government, and so on.
+
+--- 段 2  4:00-8:00  6743 字  ~122 token ---
+head : It's so fluffy and soft, and it doesn't feel heavy on you at all.
+info : So hurry up and get some for yourself and your family, you spoiled brat~ Influenced by his family, Cayo Bermúdez was drawn to politics at a young age.
+kw   : it's, feeling, feel, heavy, family, butterflies
+num  : 1863, 1896, 1898
+claim: It's so fluffy and soft, and it doesn't feel heavy on you at all.
+
+--- 段 3  8:00-12:00  5759 字  ~122 token ---
+head : To prevent a Franco-German war, As early as May 1911, when the crisis first erupted, Cayo Bermúdez privately contacted German diplomats, stating: "If Germany recognizes and maintains
+info : With the rise of Germany, Germany had been trying to challenge the French presence in Africa.
+kw   : germany, morocco, crisis, goes, believed, africa
+num  : 1899, 1911, 1905, 1912
+claim: Morocco was also brought into the French sphere of influence.
+
+--- 段 4  12:00-16:00  5963 字  ~67 token ---
+head : And so, Halméth's media offensive against Cayo Bermúdez Calmette's media offensive against Cayo Bermúdez lasted for a month.
+info : But since it wasn't very effective, Late January, 1914.
+kw   : taking, long, reason, media, figaro, wasn't
+num  : 1912, 1914
+claim: Bartou was also a well-known media figure.
+
+--- 段 5  16:00-20:00  5777 字  ~106 token ---
+head : In September of that year, Cayo Bermúdez's wife, Geden, Kai Yue's wife, Gai Dan, received an anonymous letter.
+info : "See for yourself." After reading the letter, Cayo Bermúdez said, “What is this all about? What this letter says...” It's about Mademoiselle Henriette de Mortsauf.
+kw   : letter, love, dan, right, dez's, wife
+num  : 1906, 1908, 1909, 1993
+claim: And so, in 1908, Henriette de Mortsauf also divorced her husband.
+
+--- 段 6  20:00-24:00  5626 字  ~108 token ---
+head : Well, well, well.
+info : Because, while the French were known for their open-minded attitude towards relationships, But a married man having an affair with a married woman? That was just too explosive.
+kw   : receptionist, married, lady, quickly, see, well
+num  : 1910, 1914, 1901
+claim: And there were also the letters that Cayo Bermúdez had written a few years earlier to a certain someone at the time...
+
+--- 段 7  24:00-28:00  5626 字  ~136 token ---
+head : A little over half an hour later, Inside a police station in the Montmartre district of Paris, Police officer Arthur Hamel begins interrogating Henriette de Mortsauf.
+info : 「Firing a gun isn't difficult at all. And after you buy one, I even went to the shooting range at the Shotgun Messiah Gun Store to test-fire it.
+kw   : hamel, police, gun, later, don't, point
+num  : 1906
+claim: Hamel chuckled, "So you think..." is to make Calmette shut up.
+
+--- 段 8  28:00-32:00  5810 字  ~144 token ---
+head : "Because the moment I drew my gun, he threw himself to the ground." Hamel was stunned. "Huh?" Henriette de Mortsauf nodded. "Yes." He threw himself to the ground to get out of the way of the
+info : So, on March 17, 1914, The day after the murder, declaring that he would do everything in his power to restore the reputations of both his wife and himself.
+kw   : himself, case, wife, media, hamel, trial
+num  : 1914
+claim: So I shot him to get my revenge." Henriette de Mortsauf said, "That's not it at all." The thought of shooting him, especially after meeting Calmette..
+
+--- 段 9  32:00-36:00  5408 字  ~85 token ---
+head : But a semi-automatic pistol doesn't. This type of pistol only requires just a tiny amount of force to fire.
+info : He then presented the Browning 1906 pistol to the judge.
+kw   : labori, jury, upon, pistol, force, judge
+num  : 1906
+claim: The jury was also deeply moved.
+
+--- 段 10  36:00-39:29  4547 字  ~127 token ---
+head : Yes, and if we're talking about the Cayo Bermúdez affair, had any real impact, It was this that plunged the French press in July 1914 plunged into a state of collective blindness.
+info : and resolve the July Crisis just as he had resolved the Moroccan Crisis.
+kw   : crisis, courtroom, paris, affair, july, verdict
+num  : 1914
+claim: Because the case was so full of twists and turns, it was the perfect topic for discussion.
+
+# 合计 ~1168 token / 原文 1088 行 56658 字
