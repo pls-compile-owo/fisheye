@@ -151,4 +151,5 @@ else        → 13 秒/帧（静态/录屏）
 ## 10. 语义切换点（可选，1.0.0）
 
 embedding + 变点检测识别「话题切换」时刻，零 token 纯 CPU；结果写 manifest 的 `semanticShifts`，
-精读建议里作为额外信号（`source: 'semantic'`）。依赖外部 Python CLI（SEMANTIC_CLI），找不到就降级跳过。
+精读建议里作为额外信号（`source: 'semantic'`）。优先用外部 Python CLI（SEMANTIC_CLI）做 embedding 增强；
+找不到 python 时降级为纯 JS 词法切分（`lib/semantic-core.mjs`，char-bigram 漂移，1.0.9 起）。

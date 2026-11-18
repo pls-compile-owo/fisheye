@@ -45,9 +45,13 @@ node fisheye.mjs auto https://... --budget 20000     # 任意 URL（yt-dlp）
 
 ## 安装
 
+> **推荐交给 agent 装**：把本仓库链接（或这份 README）直接发给你的 AI agent，说一句「装一下 fisheye，装完跑 selftest」即可——安装步骤、依赖探测、失败修复提示都写在 README 和 `selftest` 输出里，agent 能自己走完整个流程；跑完如果有 `[!!]` 项，按提示补依赖再跑一遍就行。
+>
+> 为什么适合交给 agent：核心零 npm 依赖、`selftest` 会逐项诊断并给出修复命令、错误信息里直接带可执行的下一步。
+
 **前置**：Node.js 18+、ffmpeg
 
-**可选**：Python 3.9+（带 `numpy` 和 `Pillow`，用于字幕带检测）；whisper.cpp（音频转写）；tesseract（OCR）；yt-dlp（任意 URL）
+**可选**：Python 3.9+（带 `fastembed` + `ruptures`，用于语义切分的 embedding 增强；不装则自动用纯 JS 词法降级）；whisper.cpp（音频转写）；tesseract（OCR）；yt-dlp（任意 URL）
 
 ```bash
 # 方式一：npm 全局安装（推荐）
@@ -69,10 +73,13 @@ pip3 install --user yt-dlp               # 可选：任意 URL
 pip3 install -r semantic/requirements.txt # 可选：语义切分
 ```
 
-**Python 依赖**：字幕带检测需要 `numpy` + `Pillow`，且必须装在 **fisheye 实际调用的那个 python3** 上：
+**字幕带检测**：已纯 JS 化（`lib/band.mjs`），零 python / 零 numpy-Pillow，无需任何 Python 依赖。
+
+**语义切分**：默认纯 JS 词法降级（`lib/semantic-core.mjs`，零依赖）；想要 embedding 增强（bge-small-zh-v1.5，更准）才需要 python：
 
 ```bash
-python3 -c "import numpy, PIL"   # 自检用同一解释器验证，缺依赖会显示 [--]
+pip3 install -r semantic/requirements.txt   # fastembed + ruptures + numpy
+python3 -c "import fastembed, ruptures"     # 自检用同一解释器验证，缺依赖会降级为纯 JS
 ```
 
 **解压**：Windows 打的 zip 在 macOS 上可能解出反斜杠命名的坏文件。推荐 `npm i -g`，或下载 `npm pack` 生成的 `.tgz`（POSIX 路径安全）。
@@ -332,7 +339,7 @@ SEMANTIC_CLI=/path/to/my-semantic-cli.py SEMANTIC_PYTHON=/path/to/python fisheye
                      "suggestions": [{ "t": 秒, "reason": "...", "confidence": 0~1, "source": "...", "kind": "..." }] }
 ```
 
-随包参考实现用 `fastembed`（bge-small-zh）+ `ruptures` 做 embedding 相似度变点检测，零 token、纯 CPU。装好依赖后 `auto` 自动启用；没有依赖时静默降级。
+随包参考实现用 `fastembed`（bge-small-zh）+ `ruptures` 做 embedding 相似度变点检测，零 token、纯 CPU。装好依赖后 `auto` 自动启用 embedding 增强；没有依赖时**降级为纯 JS 词法切分**（`lib/semantic-core.mjs`，char-bigram 漂移），语义区分度弱于 embedding 但仍能切出明显的话题切换。
 
 ### 精读阈值（字幕糊判定）
 
@@ -412,7 +419,7 @@ node fisheye.mjs selftest --deep # 额外做抽帧 + 字幕带 + OCR + 转写 + 
 
 | 类别 | 检查内容 |
 |---|---|
-| 基础 | Node 版本、ffmpeg、python（可选）、analyze_subs.py |
+| 基础 | Node 版本、ffmpeg、字幕带检测（纯 JS，零 python） |
 | 环境 | 输出目录可写、缓存、磁盘剩余 |
 | 平台适配器 | 遍历注册表：B 站凭证 / 视频 API / 弹幕 API / 官方字幕 API |
 | 可选组件 | 音频转写、OCR、yt-dlp、语义切分 |
@@ -512,7 +519,7 @@ node test-danmaku-filter.js              # 弹幕过滤规则测试（51 条用�
 node fisheye.mjs selftest --deep         # 含抽帧/字幕带/OCR/转写/语义实测的自检
 ```
 
-当前：**176 个测试**（173 通过 + 3 跳过）+ **51 条弹幕过滤用例**；广告检测有 **8 条人工标注真值**视频。
+当前：**186 个测试**（183 通过 + 3 跳过）+ **51 条弹幕过滤用例**；广告检测有 **8 条人工标注真值**视频。
 
 项目结构：
 
@@ -520,13 +527,15 @@ node fisheye.mjs selftest --deep         # 含抽帧/字幕带/OCR/转写/语义
 |---|---|
 | `fisheye.mjs` | CLI 入口（参数解析 / 输入解析 / 命令分发） |
 | `lib/platforms/` | 平台适配器（`bilibili` / `local` / `url` + `_template` + `_probe` 时长探测 + `index.mjs` 注册表） |
-| `lib/env.mjs` | 路径与依赖解析（ffmpeg / python / 凭证 / 配置） |
+| `lib/env.mjs` | 路径与依赖解析（ffmpeg / 语义 python / 凭证 / 配置） |
 | `lib/util.mjs` | 时间格式化 / 参数校验 / 文件头探测 |
 | `lib/proc.mjs` | 进程探测共用工具（三个可选能力 audio/ocr/ytdlp 共用） |
 | `lib/bili.mjs` | B站纯函数 + API（视频信息 / WBI 签名 / 官方字幕 / 弹幕） |
-| `lib/frame.mjs` | 抽帧与时间点选择（场景检测 / 字幕带定位 / 单帧截取） |
+| `lib/frame.mjs` | 抽帧与时间点选择（场景检测 / 取帧计划 / 单帧截取） |
+| `lib/band.mjs` | 字幕带定位（纯 JS，ffmpeg PGM 灰度 → 梯度/分位/峰值，零 python） |
 | `lib/danmaku.mjs` | 弹幕分析 + 广告段检测（多信号源，关键词参数化） |
-| `lib/semantic.mjs` | 语义切分能力探测 + 子进程调用（独立 Python 模块） |
+| `lib/semantic.mjs` | 语义切分能力探测（embedding 增强 + 纯 JS 兜底） |
+| `lib/semantic-core.mjs` | 语义切分纯 JS 核心（char-bigram 词法漂移 + top-k 峰值） |
 | `lib/collect.mjs` | 采集层（下载/元信息/字幕/弹幕/广告/语义 → ctx） |
 | `lib/planner.mjs` | 规划（密度/张数/预算） |
 | `lib/executor.mjs` | 精读建议（几何挑点 + 弹幕热区 + 语义切换点合并） |
@@ -567,11 +576,10 @@ Copyright (c) 2026 Derpyu520 and qq-bridge / QSH contributors）。
 | 依赖 | 用途 | 许可 |
 |---|---|---|
 | [ffmpeg](https://ffmpeg.org/) | 抽帧、拼图、字幕带切片 | LGPL/GPL |
-| [numpy](https://numpy.org/) · [Pillow](https://python-pillow.org/) | 字幕带位置检测（可选） | BSD / MIT-CMU |
 | [whisper.cpp](https://github.com/ggml-org/whisper.cpp) | 音频转写（可选） | MIT |
 | [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) | 图片文字识别（可选） | Apache-2.0 |
 | [yt-dlp](https://github.com/yt-dlp/yt-dlp) | 任意平台视频下载（可选） | Unlicense |
-| [fastembed](https://github.com/qdrant/fastembed) + [ruptures](https://github.com/deepcharles/ruptures) | 语义切分（可选） | Apache-2.0 / BSD-2 |
+| [fastembed](https://github.com/qdrant/fastembed) + [ruptures](https://github.com/deepcharles/ruptures) | 语义切分 embedding 增强（可选） | Apache-2.0 / BSD-2 |
 
 ### 思想来源
 

@@ -2,6 +2,23 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.0.9] - 2026-11-18
+
+### Changed
+
+- **字幕带检测纯 JS 化（解除 python 依赖）**：删除 `analyze_subs.py`（numpy + Pillow），改为 `lib/band.mjs`——ffmpeg 输出 P5 灰度 PGM（自带宽高头），JS 读字节算行梯度 → 跨帧低分位 → 平滑找峰 → 扩展边界，输出与 python 版对齐（bandRatio/confidence 一致，top/bot 差 2px 内）。
+- **语义切分纯 JS 兜底**：新增 `lib/semantic-core.mjs`（char-bigram 词法漂移 + top-k 峰值），无 python 时也能切话题切换点；embedding 增强（`semantic/cli.py` + fastembed）保留为可选，探测到 python 才启用。
+- **selftest 更新**：移除 python / analyze_subs.py 检查项，字幕带实测改为纯 JS `detectBand`（跨全片 24 帧），新增「语义切分」能力检查。
+
+### Removed
+
+- `analyze_subs.py`（numpy + Pillow 的 python 依赖，已被 `lib/band.mjs` 取代）。
+
+### Tests
+
+- 语义模块单测重写：纯 JS 兜底 / embedding 增强 / 词法切分 / cosine 区分度 / 输入校验。
+- 全量 186 用例（183 通过 + 3 跳过），golden 广告真值 8 条零回归。
+
 ## [1.0.8] - 2026-11-18
 
 ### Docs

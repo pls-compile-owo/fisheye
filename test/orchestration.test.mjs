@@ -46,7 +46,7 @@ test('collectSignals：无字幕无弹幕的本地视频——基础 ctx 字段�
   assert.equal(ctx.range, null)
   assert.equal(ctx.official, null)
   assert.equal(ctx.transcript, '')
-  assert.equal(ctx.hasSubs, false)          // 无 python 时 detectBand 返回 null
+  assert.equal(ctx.hasSubs, false)          // 64x64 无字幕假视频：detectBand（纯 JS）检不出字幕带
   assert.ok(Array.isArray(ctx.scenes))
   assert.ok(Array.isArray(ctx.danmaku))
   assert.ok(Array.isArray(ctx.dmHot))

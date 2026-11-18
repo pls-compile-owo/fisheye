@@ -2,7 +2,7 @@
 
 ## 依赖解析顺序
 
-fisheye 不写死任何绝对路径。ffmpeg / python / 凭证按这个顺序找：
+fisheye 不写死任何绝对路径。ffmpeg / 语义 python / 凭证按这个顺序找：
 
 ```
 1. 环境变量        FFMPEG / PYTHON / BILI_CRED
@@ -18,7 +18,7 @@ fisheye 不写死任何绝对路径。ffmpeg / python / 凭证按这个顺序找
 | 变量 | 作用 | 示例 |
 |---|---|---|
 | `FFMPEG` | ffmpeg 可执行文件 | `C:/tools/ffmpeg/bin/ffmpeg.exe` |
-| `PYTHON` | python（字幕带检测用，可选） | `C:/Python312/python.exe` |
+| `PYTHON` | python（语义切分 embedding 增强用，可选） | `C:/Python312/python.exe` |
 | `BILI_CRED` | B站登录态 JSON | `D:/secrets/bili.json` |
 | `FISHEYE_HOME` | 数据目录（cache/out 放哪） | `D:/video-cache` |
 
@@ -33,7 +33,7 @@ FFMPEG=/usr/bin/ffmpeg node fisheye.mjs selftest
 ```
 
 | `SEMANTIC_CLI` | 语义切分 CLI 路径；默认用随包 `semantic/cli.py` |
-| `SEMANTIC_PYTHON` | 跑语义模块的 Python（需 `pip install -r semantic/requirements.txt`） |
+| `SEMANTIC_PYTHON` | 跑语义模块 embedding 增强的 Python（需 `pip install -r semantic/requirements.txt`；不设则纯 JS 词法兜底） |
 
 ## 配置文件
 
@@ -88,7 +88,7 @@ node fisheye.mjs selftest --deep
 | `视频 API 请求失败` | 网络 / 接口变更（这个接口是公开的，**不吃 cookie**） | 先查网络；再确认 bilibili 接口是否改了 |
 | `官方字幕 API` 显示 `[--]` | 这条视频没字幕轨，**或** SESSDATA 过期（匿名拿不到 AI 字幕） | 换一条有字幕的视频交叉验证；若多条都拿不到，重新登录复制 cookies |
 | 播放直链拿不到 / 403 | SESSDATA 过期（playurl 接口要登录态） | 重新登录复制 cookies |
-| `字幕带实测` 失败 | python 缺 numpy/Pillow | `pip install numpy pillow` |
+| `语义切分` 显示降级 | 没装 python + fastembed | 装 `pip install -r semantic/requirements.txt`，或接受纯 JS 词法兜底 |
 | 渲染出的拼图是黑图 | ffmpeg seek 失败 / 视频编码特殊 | 反馈时附上视频 BV 号和 ffmpeg 版本 |
 
 ### 性能调优
@@ -132,10 +132,12 @@ node fisheye.mjs auto BV1xxx --density 4   # 强制 4 秒/帧
 
 ## Python 可选依赖
 
-字幕带定位需要：
+字幕带定位已纯 JS 化（`lib/band.mjs`），**不需要 python**。
+
+语义切分的 embedding 增强才需要 python：
 
 ```bash
-pip install numpy pillow
+pip install -r semantic/requirements.txt   # fastembed + ruptures + numpy
 ```
 
-不装的话：`[字幕]` 那一步会告警并降级为「只看画面」，其他功能不受影响。
+不装的话：语义切分自动降级为纯 JS 词法切分（`lib/semantic-core.mjs`，零依赖），能切明显话题切换但语义区分度弱于 embedding。

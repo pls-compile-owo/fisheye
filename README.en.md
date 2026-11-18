@@ -45,9 +45,13 @@ Then a few key moments get a **close-up** at full resolution — the only place 
 
 ## Install
 
+> **Let your agent install it**: paste this repo link (or this README) to your AI agent and say "install fisheye, then run selftest". Setup steps, dependency probing and repair hints all live in this README and in `selftest` output, so the agent can finish the whole flow on its own; if any `[!!]` item shows up, it just installs the missing dependency and reruns.
+>
+> Why this works well: the core has zero npm dependencies, `selftest` diagnoses each piece with concrete repair commands, and errors carry the next executable step.
+
 **Requires**: Node.js 18+, ffmpeg
 
-**Optional**: Python 3.9+ with `numpy` + `Pillow` (subtitle-band detection); whisper.cpp; tesseract; yt-dlp
+**Optional**: Python 3.9+ with `fastembed` + `ruptures` (semantic-segmentation embedding boost; without it, a pure-JS lexical fallback is used); whisper.cpp; tesseract; yt-dlp
 
 ```bash
 npm i -g @pls-compile-owo/fisheye
@@ -64,10 +68,13 @@ pip3 install --user yt-dlp                          # optional
 pip3 install -r semantic/requirements.txt           # optional (semantic)
 ```
 
-Subtitle-band detection needs `numpy` + `Pillow` on the **same python3 fisheye invokes**:
+Subtitle-band detection is **pure JS** (`lib/band.mjs`) — no Python, no numpy/Pillow needed.
+
+Semantic segmentation defaults to a pure-JS lexical fallback (`lib/semantic-core.mjs`, zero deps). For the embedding boost (bge-small-zh-v1.5, more accurate), install:
 
 ```bash
-python3 -c "import numpy, PIL"   # selftest verifies with the same interpreter
+pip3 install -r semantic/requirements.txt   # fastembed + ruptures + numpy
+python3 -c "import fastembed, ruptures"     # selftest verifies with the same interpreter
 ```
 
 Prefer `npm i -g` over unzipping a Windows-made zip (backslash paths break on macOS).
@@ -232,7 +239,7 @@ output: stdout JSON { "segments": [{ "t": s, "confidence": 0..1, "signals": [...
                       "suggestions": [{ "t": s, "reason": "...", "confidence": 0..1, "source": "...", "kind": "..." }] }
 ```
 
-The bundled reference implementation uses `fastembed` (bge-small-zh) + `ruptures` for embedding-based change-point detection — zero tokens, CPU-only. Enabled automatically when dependencies exist; silently skipped otherwise.
+The bundled reference implementation uses `fastembed` (bge-small-zh) + `ruptures` for embedding-based change-point detection — zero tokens, CPU-only. Enabled automatically when dependencies exist; otherwise it **falls back to pure-JS lexical segmentation** (`lib/semantic-core.mjs`, char-bigram drift) — weaker than embedding but still catches clear topic shifts.
 
 ### Close-up thresholds
 
@@ -335,7 +342,7 @@ node test-danmaku-filter.js              # danmaku filter rules (51 cases)
 node fisheye.mjs selftest --deep         # end-to-end self-check
 ```
 
-Currently **176 tests** (173 pass + 3 skipped) + **51 danmaku cases**; ad detection has **8 hand-labeled golden videos**.
+Currently **186 tests** (183 pass + 3 skipped) + **51 danmaku cases**; ad detection has **8 hand-labeled golden videos**.
 
 Structure: `fisheye.mjs` (CLI), `lib/platforms/` (adapters + template + registry), `lib/collect.mjs` (signal collection), `lib/planner.mjs` / `lib/executor.mjs` (decisions), `lib/stages.mjs` (orchestration), `lib/selftest.mjs`, `dsh-plugin/`, `semantic/cli.py`, `test/`.
 
@@ -349,7 +356,7 @@ For personal study and research only: follow each platform's terms, don't scrape
 
 The design (official subtitles first, rate-based density, refine loop) and some directory conventions were informed by **SurfCore** (QQ ↔ DeepSeek Harness bridge and Bilibili tooling, MIT, Copyright (c) 2026 Derpyu520 and qq-bridge / QSH contributors). `danmaku-filter.mjs` derives from the same module in SurfCore; see the third-party notices at the end of [LICENSE](./LICENSE).
 
-Third-party: ffmpeg, numpy/Pillow, whisper.cpp, Tesseract OCR, yt-dlp, fastembed + ruptures (optional components, see the Chinese README table).
+Third-party: ffmpeg, whisper.cpp, Tesseract OCR, yt-dlp, fastembed + ruptures (optional components, see the Chinese README table).
 
 ## License
 

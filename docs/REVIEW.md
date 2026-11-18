@@ -12,7 +12,8 @@ cd fisheye
 
 # 1. 语法
 node --check fisheye.mjs
-python -c "import ast; ast.parse(open('analyze_subs.py', encoding='utf-8').read())"
+node --check lib/band.mjs
+node --check lib/semantic-core.mjs
 
 # 2. 单元测试（node test-danmaku-filter.js，51 断言）
 node test-danmaku-filter.js
