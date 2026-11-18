@@ -1,5 +1,5 @@
 // tools/verify-2.0-0.2-snap.mjs — 第 0 批验证 0.2：吸附单档(0.3) vs 三档(0.3/0.15/0.08)对比
-// 8 条 golden 视频（从 ad-truth 选，覆盖长短快慢）：
+// 8 条 golden 视频（从 low-activity 选，覆盖长短快慢）：
 //   下载 → 场景检测 → 整片/分段取 9 帧，对比两种吸附策略的「最终阈值 / 吸附数 / 去重数 / 帧位差」。
 // 不改产品代码：单档逻辑在此脚本内复刻 frame.mjs pickTimes 的 tryThreshold(0.3)。
 import { ensureMp4 } from '../lib/bili.mjs'

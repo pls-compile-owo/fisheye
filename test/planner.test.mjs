@@ -11,7 +11,7 @@ const base = {
   official: null,
   transcript: '',
   hasSubs: false,
-  gridCost: 1200,
+  gridCost: 1024,
 }
 
 test('planAuto：密度阶梯按变化率推导', () => {
@@ -62,7 +62,7 @@ test('planAuto：estTotal = 字幕 + 拼图 + 精读预留', () => {
 })
 
 test('planAuto：空/边界输入不崩', () => {
-  const p = planAuto({ duration: 1, budget: 2000, densityOpt: null, rate: 0, official: null, transcript: '', hasSubs: false, gridCost: 1200 })
+  const p = planAuto({ duration: 1, budget: 2000, densityOpt: null, rate: 0, official: null, transcript: '', hasSubs: false, gridCost: 1024 })
   assert.equal(p.gridCount, 1)
   assert.ok(p.chunk > 0)
 })
