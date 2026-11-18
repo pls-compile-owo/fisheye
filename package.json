@@ -1,7 +1,7 @@
 {
   "name": "@pls-compile-owo/fisheye",
   "version": "2.0.0",
-  "description": "Token-budget-aware video understanding for AI agents: official subtitles -> burned-in subtitle band -> danmaku highlights -> adaptive keyframe grids -> targeted refine.",
+  "description": "Token-budget-aware video understanding for AI agents: text evidence first (segment cards + subtitle skeletons + danmaku emotion), images rendered on demand. Judgment stays with the agent.",
   "type": "module",
   "bin": {
     "fisheye": "./fisheye.mjs"
@@ -16,6 +16,7 @@
     "README.md",
     "README.en.md",
     "CHANGELOG.md",
+    "CHANGELOG.en.md",
     "LICENSE",
     "docs/",
     "mcp-video-server.js",
