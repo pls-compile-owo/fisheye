@@ -4,6 +4,12 @@ English: [CHANGELOG.en.md](./CHANGELOG.en.md)
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.0.26] - 2026-11-18
+
+### Docs
+
+- **全文档审计更新**：DESIGN 的弹幕过滤用例数 48→51（与测试一致）；README 补「产物完整性摘要」章节（1.0.12 的 `[产物]`/coverage 功能）；REVIEW 中文补 `node --test` 全量测试步骤；CONFIG 环境变量表补 `FISHEYE_MIN_SCENE`/`FISHEYE_MAX_PICKS`/`FISHEYE_TRACE`/`FISHEYE_DEBUG`；dsh-plugin README 补 npm 全局安装路径解析说明；校验全部内部链接有效。
+
 ## [1.0.25] - 2026-11-18
 
 ### Docs

@@ -16,7 +16,7 @@ The tool never decides what the video *means*; it only produces evidence (grid p
 
 | Key | Default | Meaning |
 |---|---|---|
-| `fisheyePath` | `fisheye.mjs` (plus `FISHEYE_CLI` env, PATH) | Entry point of the fisheye CLI |
+| `fisheyePath` | `fisheye.mjs` (plus `FISHEYE_CLI` env, PATH, and the npm global install) | Entry point of the fisheye CLI |
 
 ## Tool parameters
 

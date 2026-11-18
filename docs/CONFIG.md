@@ -34,6 +34,8 @@ $env:FFMPEG = "C:/tools/ffmpeg/bin/ffmpeg.exe"; node fisheye.mjs selftest
 FFMPEG=/usr/bin/ffmpeg node fisheye.mjs selftest
 ```
 
+| `FISHEYE_MIN_SCENE` / `FISHEYE_MAX_PICKS` | 精读几何阈值：画面变化门槛（默认 0.85）/ 最多挑几点（默认 8） |
+| `FISHEYE_TRACE` / `FISHEYE_DEBUG` | `1` 时生成 `out/<id>-trace.json` 分阶段耗时 / 打印错误堆栈 |
 | `SEMANTIC_CLI` | 语义切分 CLI 路径；默认用随包 `semantic/cli.py` |
 | `SEMANTIC_PYTHON` | 跑语义模块 embedding 增强的 Python（需 `pip install -r semantic/requirements.txt`；不设则纯 JS 词法兜底） |
 

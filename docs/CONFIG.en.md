@@ -34,6 +34,8 @@ $env:FFMPEG = "C:/tools/ffmpeg/bin/ffmpeg.exe"; node fisheye.mjs selftest
 FFMPEG=/usr/bin/ffmpeg node fisheye.mjs selftest
 ```
 
+| `FISHEYE_MIN_SCENE` / `FISHEYE_MAX_PICKS` | refine geometry thresholds: min scene intensity (default 0.85) / max picks (default 8) |
+| `FISHEYE_TRACE` / `FISHEYE_DEBUG` | `1` writes `out/<id>-trace.json` (per-stage timings) / prints stacks on errors |
 | `SEMANTIC_CLI` | semantic CLI path; default is the bundled `semantic/cli.py` |
 | `SEMANTIC_PYTHON` | Python that runs the embedding enhancement (`pip install -r semantic/requirements.txt`; omit for the pure-JS lexical fallback) |
 

@@ -159,6 +159,16 @@ The CLI prints a planning report explaining every decision (numbers below are fr
 [refine] 2 moments (geometry 1 + danmaku 1)
 ```
 
+### Artifact completeness summary
+
+After `auto` / `local --smart`, one line tells you what each source actually produced:
+
+```
+[artifacts] subs✓1026 · danmaku✓3580 · ads✓2 · semantic✓5 · transcript— · band—
+```
+
+Marks: `✓` obtained / `△` poor quality / `○` skipped / `—` none. The same structure goes into the manifest's `coverage` field — agents no longer have to infer silent degradation from logs.
+
 ## Commands
 
 | Command | Purpose |

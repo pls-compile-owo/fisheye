@@ -17,8 +17,9 @@ node --check fisheye.mjs
 node --check lib/band.mjs
 node --check lib/semantic-core.mjs
 
-# 2. 单元测试（node test-danmaku-filter.js，51 断言）
+# 2. 单元测试（弹幕过滤 51 断言 + 全量 211 用例：单元/golden/集成/退化）
 node test-danmaku-filter.js
+node --test --test-concurrency=1 test/
 
 # 3. 自检（依赖/凭证/API/缓存/磁盘）
 node fisheye.mjs selftest
