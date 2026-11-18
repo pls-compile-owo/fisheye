@@ -38,6 +38,8 @@ fisheye 从「全量读图 + 字幕全文」（40 分钟视频 ~51k~95k token）
 - **visualTrack 三档**（`on`/`ask`/`off`，默认 `ask`）：两源低置信时，`ask` 只标 `visualRequest`（含 `costEstimate = 帧数 × 1024`），由 agent 决定是否读图。
 - 环境变量：`FISHEYE_VISUAL_TRACK`、`FISHEYE_LOW_ACTIVITY_WEIGHT`（默认 0.3）。
 
+**演示 GIF 重写**：`docs/demo-zh.gif` / `docs/demo-en.gif` 从 1.0.29 的「规划抽帧 → 拼图 → AI 摘要」改为 2.0 流程（fast 文本模式 → 段卡片 → 按需 render）；生成脚本 `docs/make-demo-gif*.py` 同步重写，输出改为项目 `docs/`（不再写桌面）。
+
 ### Tests
 
 - 全量 **288 用例**（285 通过 + 3 跳过），基线 242 → 288。danmaku-filter 51/51。

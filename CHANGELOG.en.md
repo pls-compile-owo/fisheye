@@ -35,6 +35,8 @@ fisheye changes from "read everything + full subtitles" (~51k~95k tokens for a 4
 - **visualTrack three-tier** (`on`/`ask`/`off`, default `ask`): when both sources are low-confidence, `ask` only flags a `visualRequest` (with `costEstimate = frames × 1024`) and the agent decides whether to read images.
 - Env vars: `FISHEYE_VISUAL_TRACK`, `FISHEYE_LOW_ACTIVITY_WEIGHT` (default 0.3).
 
+**Demo GIFs rewritten**: `docs/demo-zh.gif` / `docs/demo-en.gif` now show the 2.0 flow (fast text mode → segment cards → on-demand render) instead of 1.0.29's "plan frames → grid → AI summary"; generator scripts `docs/make-demo-gif*.py` rewritten to write into the project's `docs/` (never the Desktop).
+
 ### Tests
 
 - Full **288 cases** (285 pass + 3 skip), baseline 242 → 288. danmaku-filter 51/51.
