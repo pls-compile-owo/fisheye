@@ -111,6 +111,9 @@ python3 -c "import fastembed, ruptures"     # 自检用同一解释器验证，�
 | `FISHEYE_HOME` | 数据目录（cache/out 位置，默认项目目录） |
 | `SEMANTIC_CLI` / `SEMANTIC_PYTHON` | 语义切分 CLI / 跑它的 Python（默认用随包的 `semantic/cli.py`） |
 | `FISHEYE_MIN_SCENE` / `FISHEYE_MAX_PICKS` | 精读几何阈值覆盖：画面变化强度门槛（默认 0.85）/ 最多挑几个点（默认 8） |
+| `FISHEYE_TESSERACT` / `FISHEYE_YTDLP` | OCR / yt-dlp 可执行文件路径（可选能力；也查 PATH 与常见安装位置） |
+| `FISHEYE_AUTO_AUDIO` | 设为 `0` 时 `auto` 不再自动尝试 whisper 转写（等价 `--no-audio`） |
+| `FISHEYE_TRACE` / `FISHEYE_DEBUG` | 调试：`FISHEYE_TRACE=1` 生成 `out/<id>-trace.json`（分阶段耗时）；`FISHEYE_DEBUG=1` 打印错误堆栈 |
 | `FFMPEG` / `PYTHON` / `BILI_CRED` | 工具与登录态路径覆盖 |
 
 ### 依赖路径（一般不用管）
@@ -227,6 +230,7 @@ node fisheye.mjs grab BV1ziWP6qENy 82.5,145.0
 | `--count`（subs） | 1 ~ 50（行） | 自动 |
 | `--grid`（grid） | 行列各 1 ~ 9 | 3x3 |
 | `--band`（subs） | 0 ~ 0.6（相对高度） | auto |
+| `--concurrency`（batch） | 1 ~ 8 | 1 |
 
 ### refine 的三种挑点方式
 
@@ -288,7 +292,7 @@ adDetector: {
 
 `danmaku-filter.mjs` 负责剔除广告引流、无意义刷屏。规则是「关键词表 + 句式」：
 
-- 改 `danmaku-filter.mjs` 里的 `AD_PATTERNS` / `NOISE_PATTERNS` 加你平台的黑话
+- 改 `danmaku-filter.mjs` 里的 `AD_RULES`（广告引流词表）加你平台的黑话；噪声判定走 `spamReason()`（纯符号/复读/无意义短句）
 - 过滤规则有独立测试：`node test-danmaku-filter.js`（51 条用例）
 - `--no-danmaku-frames` 可让弹幕只做「热区/广告」判断，不参与取帧
 
@@ -600,7 +604,7 @@ node test-danmaku-filter.js              # 弹幕过滤规则测试（51 条用�
 node fisheye.mjs selftest --deep         # 含抽帧/字幕带/OCR/转写/语义实测的自检
 ```
 
-当前：**198 个测试**（195 通过 + 3 跳过）+ **51 条弹幕过滤用例**；广告检测有 **8 条人工标注真值**视频。
+当前：**211 个测试**（208 通过 + 3 跳过）+ **51 条弹幕过滤用例**；广告检测有 **8 条人工标注真值**视频。
 
 项目结构：
 

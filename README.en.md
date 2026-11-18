@@ -93,6 +93,10 @@ Copy `credentials.example.json` to `credentials.json` and fill in `sessdata`, `b
 | `FISHEYE_WHISPER` / `FISHEYE_WHISPER_MODEL` | whisper binary / model (optional) |
 | `FISHEYE_HOME` | data directory (cache/out) |
 | `SEMANTIC_CLI` / `SEMANTIC_PYTHON` | external semantic CLI / interpreter (default: bundled `semantic/cli.py`) |
+| `FISHEYE_MIN_SCENE` / `FISHEYE_MAX_PICKS` | refine geometry thresholds: min scene intensity (default 0.85) / max picks (default 8) |
+| `FISHEYE_TESSERACT` / `FISHEYE_YTDLP` | OCR / yt-dlp executable paths (also searched on PATH and common install dirs) |
+| `FISHEYE_AUTO_AUDIO` | set to `0` to stop `auto` from trying whisper transcription (same as `--no-audio`) |
+| `FISHEYE_TRACE` / `FISHEYE_DEBUG` | debugging: `FISHEYE_TRACE=1` writes `out/<id>-trace.json` (per-stage timings); `FISHEYE_DEBUG=1` prints stacks |
 | `FFMPEG` / `PYTHON` / `BILI_CRED` | tool and credential path overrides |
 
 Lookup order for tools: env var → `~/.config/fisheye/config.json` → project `bin/` / `credentials.json` → PATH.
@@ -196,7 +200,7 @@ Tuning: label 2–3 real videos first, then adjust. Too many false positives →
 
 ### Danmaku filtering
 
-`danmaku-filter.mjs` drops ad-link spam and noise using keyword tables (`AD_PATTERNS` / `NOISE_PATTERNS`) — edit them for your platform's slang. Rules have their own test: `node test-danmaku-filter.js` (51 cases). `--no-danmaku-frames` keeps danmaku for hotspots/ads only.
+`danmaku-filter.mjs` drops ad-link spam via the `AD_RULES` keyword table and noise via `spamReason()` — edit them for your platform's slang. Rules have their own test: `node test-danmaku-filter.js` (51 cases). `--no-danmaku-frames` keeps danmaku for hotspots/ads only.
 
 ### Budget model
 
@@ -419,7 +423,7 @@ node test-danmaku-filter.js              # danmaku filter rules (51 cases)
 node fisheye.mjs selftest --deep         # end-to-end self-check
 ```
 
-Currently **198 tests** (195 pass + 3 skipped) + **51 danmaku cases**; ad detection has **8 hand-labeled golden videos**.
+Currently **211 tests** (208 pass + 3 skipped) + **51 danmaku cases**; ad detection has **8 hand-labeled golden videos**.
 
 Structure: `fisheye.mjs` (CLI), `lib/platforms/` (adapters + template + registry), `lib/collect.mjs` (signal collection), `lib/planner.mjs` / `lib/executor.mjs` (decisions), `lib/stages.mjs` (orchestration), `lib/selftest.mjs`, `dsh-plugin/`, `semantic/cli.py`, `test/`.
 

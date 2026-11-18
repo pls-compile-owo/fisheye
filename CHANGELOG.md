@@ -2,6 +2,12 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.0.20] - 2026-11-18
+
+### Docs
+
+- **README 审计修正**（中英）：测试数 198→211（208 通过）；弹幕过滤规则名更正为实际导出 `AD_RULES`/`spamReason()`（原 `AD_PATTERNS`/`NOISE_PATTERNS` 不存在）；环境变量表补齐 `FISHEYE_MIN_SCENE`/`FISHEYE_MAX_PICKS`/`FISHEYE_TESSERACT`/`FISHEYE_YTDLP`/`FISHEYE_AUTO_AUDIO`/`FISHEYE_TRACE`/`FISHEYE_DEBUG`（英文表同步）；参数范围表补 `--concurrency`（1~8）。
+
 ## [1.0.19] - 2026-11-18
 
 ### Docs
