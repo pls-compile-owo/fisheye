@@ -2,6 +2,16 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.0.16] - 2026-11-18
+
+### Added
+
+- **性能基准**（README 中英）：40 分钟视频 auto 全流程 75~83 秒（i5-12500H / 16GB / NVMe）、峰值内存 142MB；分阶段拆解显示瓶颈是场景检测（~72s，全片 320p 解码）——抽帧/字幕带/OCR/语义都是秒级。附不同硬件的自测方法。
+
+### Fixed
+
+- **detectScenes 在 OUT 目录不存在时静默返回空**：`lib/frame.mjs` 未先创建输出目录，ffmpeg 的 cwd 不存在导致异常被 catch 成"0 处变化"（首跑/刚清理后场景检测假失败）。已加幂等 `mkdirSync`，修复后同视频检出 673 处变化（此前 0）。
+
 ## [1.0.15] - 2026-11-18
 
 ### Docs

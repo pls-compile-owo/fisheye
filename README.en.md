@@ -317,6 +317,45 @@ The plugin only *reads* videos (grids, subtitles, danmaku evidence); summaries b
 - **Ads don't occupy frames**: compressing ad segments raises content density (measured: interval 22.1s → 8.3s on one grid).
 - **Semantic without an LLM**: similarity detection on subtitle/transcript text (pure-JS char-bigram by default, embedding boost with python) costs zero tokens; semantic shifts feed refine suggestions as a *structural* signal, not mixed into geometry.
 
+## Performance benchmark
+
+> Measured 2026-11-18: Windows 11 / Intel i5-12500H (12C/16T) / 16 GB / NVMe SSD.
+> Test video: a 37-minute Bilibili video (2255s, 1080p, 281 MB), **cache hit, download excluded**.
+
+| Stage | Time | Notes |
+|---|---|---|
+| **auto full pipeline** | **75–83 s** | scene detection + subtitle/danmaku APIs + semantic + 1 grid |
+| ├ scene detection (bottleneck) | ~72 s | one full 320p ffmpeg decode, ~95% of the run |
+| ├ subtitle / danmaku APIs | ~1–2 s | network-bound |
+| ├ semantic split (pure JS) | ~0.2 s | 1026 subtitle lines, single core |
+| └ 1 grid (9 frames) | ~1 s | ffmpeg frame grabs |
+| grid (38 grids, incl. scene detection) | 140 s | 342 frame grabs |
+| subs (subtitle band) | 5.6 s | 24-frame sampling |
+| ocr (one image) | 0.5 s | tesseract |
+| download 281 MB | 227 s | network, not processing |
+| **peak memory** | **142 MB** (ffmpeg 85 MB) | process-tree RSS |
+
+**Takeaway**: the cost of a 40-minute video is almost entirely scene detection (one full 320p decode). Frame grabbing, grids, semantic splitting and subtitle-band detection are all seconds.
+
+### Other hardware (not measured — no made-up numbers)
+
+No data outside this machine. In order of impact:
+
+1. **CPU / decode speed** — scene detection decodes the whole file; single-core matters most, extra cores help little.
+2. **Network** — downloading a 281 MB video often dominates (227 s here).
+3. **Memory** — not a bottleneck (~150 MB peak); SSD only affects sequential cache reads.
+
+Measure it yourself:
+
+```bash
+# single item: scene detection (best proxy for machine differences)
+ffmpeg -hide_banner -i video.mp4 -vf "scale=320:-2,select='gt(scene,0.05)',metadata=print:file=/tmp/s.txt" -an -f null -
+
+# full pipeline
+node fisheye.mjs auto BV1xxx --budget 20000
+```
+
+Post the numbers in an issue and this table will be updated.
 ## Known limitations
 
 - Capabilities vary by platform: Bilibili has subtitles + danmaku + ad detection; local/URL have no danmaku — ad detection and semantic segmentation both run on whisper's timestamped transcript.
