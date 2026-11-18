@@ -166,42 +166,33 @@ Adding a platform = copy `lib/platforms/_template/` and add one import to the re
 
 ## Tuning and extension points
 
-### Ad detection (per platform)
+### Ad detection (pluggable signal sources)
 
-Each adapter ships an `adDetector` with three levels:
+Ad detection is split into pluggable **signal sources** (`lib/signals/`): five danmaku-family + two transcript-family, orchestrated in `primary` / `secondary` / `subtitle` groups. Each adapter declares which signals to enable and which keywords to use via `adDetector`.
 
-**① keywords only** (most common): platform slang and purchase signals.
-
-```js
-adDetector: { keywords: ['1407 工程启动', 'recently ordered', 'shop', 'fish oil'] }
-```
-
-**② choose signals** — six built-in detectors:
-
-| Signal | Meaning |
-|---|---|
-| `density` | danmaku density dip (viewers skip ads) |
-| `keyword-cluster` | ad keywords clustered |
-| `head-ad` | intro/spoken ad |
-| `buy-backtrack` | purchase-talk backtracking |
-| `digit-mark` | digit marks ("1407" = ad ends at 14:07) |
-| `sub-keywords` | purchase words in subtitles/transcript |
+| Signal | Group | Meaning |
+|---|---|---|
+| `danmaku-density` | primary | danmaku density dip (viewers skip ads) |
+| `danmaku-keywords` | primary | ad keywords clustered |
+| `mark` | secondary | digit marks ("1407" = ad ends at 14:07) |
+| `head` | secondary | intro/spoken ad |
+| `buy` | secondary | purchase-talk backtracking |
+| `sub-keywords` | subtitle | purchase words in subtitles/transcript (no danmaku needed) |
+| `sub-patterns` | subtitle | exact phrases in subtitles/transcript ("click the link below") |
 
 ```js
-adDetector: { signals: ['density', 'digit-mark', 'sub-keywords'] }
-```
-
-**③ custom detect function**:
-
-```js
+// seven built-in, six on by default (danmaku family + subtitle keywords)
 adDetector: {
-  detect: async ({ danmaku, duration, subtitles }) => [
-    { from: 343, to: 430, confidence: 'high', reasons: ['fish-oil ad'] },
-  ],
+  keywords: DEFAULT_KEYWORDS,               // regex object { ad, strong, mark, buy, sub, pattern }
+  signals: ['danmaku-density', 'danmaku-keywords', 'mark', 'head', 'buy', 'sub-keywords'],
 }
 ```
 
-Tuning: label 2–3 real videos first, then adjust. Too many false positives → raise the confidence bar or drop weak signals; too many misses → add platform-specific words (digit marks work best).
+Danmaku-less platforms (local/URL) enable the two transcript signals, fed by whisper's timestamped transcription.
+
+Add a signal = one file under `lib/signals/` + one line in `AD_SIGNALS` + declare it in the platform's `signals` array. For fully custom detection, provide `adDetector.detect` (`({ danmaku, duration, subtitles, transcript }) => [{ from, to, confidence, ... }]`).
+
+Tuning: label 2–3 real videos first, then adjust. Too many false positives → drop weak signals; too many misses → add platform-specific words (digit marks work best).
 
 ### Danmaku filtering
 
@@ -328,7 +319,7 @@ The plugin only *reads* videos (grids, subtitles, danmaku evidence); summaries b
 
 ## Known limitations
 
-- Capabilities vary by platform: Bilibili has subtitles + danmaku + ad detection; local/URL have no danmaku and rely on subtitle/transcript keywords for ads.
+- Capabilities vary by platform: Bilibili has subtitles + danmaku + ad detection; local/URL have no danmaku — ad detection and semantic segmentation both run on whisper's timestamped transcript.
 - Bilibili subtitles/playback URLs may need cookies.
 - Semantic segmentation needs dialogue (subtitles or transcript).
 - Long videos cost real tokens: ~12k tokens for a 40-minute Chinese subtitle track (AI English subtitles can reach ~50k).
@@ -342,7 +333,7 @@ node test-danmaku-filter.js              # danmaku filter rules (51 cases)
 node fisheye.mjs selftest --deep         # end-to-end self-check
 ```
 
-Currently **186 tests** (183 pass + 3 skipped) + **51 danmaku cases**; ad detection has **8 hand-labeled golden videos**.
+Currently **192 tests** (189 pass + 3 skipped) + **51 danmaku cases**; ad detection has **8 hand-labeled golden videos**.
 
 Structure: `fisheye.mjs` (CLI), `lib/platforms/` (adapters + template + registry), `lib/collect.mjs` (signal collection), `lib/planner.mjs` / `lib/executor.mjs` (decisions), `lib/stages.mjs` (orchestration), `lib/selftest.mjs`, `dsh-plugin/`, `semantic/cli.py`, `test/`.
 

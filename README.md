@@ -255,44 +255,33 @@ fisheye 核心不认识任何具体平台。每个平台是一个「适配器」
 
 fisheye 的「判断」都有参数，按你的平台/模型/素材调：
 
-### 广告检测（按平台调参）
+### 广告检测（信号源可插拔）
 
-每个适配器自带 `adDetector`，三档用法：
+广告识别已拆成可注册的**信号源**（`lib/signals/`）：弹幕族五路 + 台词族两路，按 `primary`（主信号）/`secondary`（补充）/`subtitle`（台词族）分组编排。每个平台适配器用 `adDetector` 声明「开哪些信号 + 用什么关键词」。
 
-**① 只换关键词**（最常见）——平台黑话、消费信号词：
+| 信号 | 分组 | 含义 |
+|---|---|---|
+| `danmaku-density` | primary | 弹幕密度低谷（观众跳过 = 广告） |
+| `danmaku-keywords` | primary | 广告关键词群聚 |
+| `mark` | secondary | 数字打点（"1407" = 14:07 广告结束） |
+| `head` | secondary | 片头口播广告 |
+| `buy` | secondary | 购买类话术回溯 |
+| `sub-keywords` | subtitle | 字幕/转写里的购买词（不依赖弹幕） |
+| `sub-patterns` | subtitle | 字幕/转写里的精确句式（"点击下方链接"） |
 
 ```js
+// 内置七路，默认开六路（弹幕族 + 字幕关键词）
 adDetector: {
-  keywords: ['1407 工程启动', '最近下单', '橱窗', '鱼油', '感谢金主爸爸'],
+  keywords: DEFAULT_KEYWORDS,               // 正则对象 { ad, strong, mark, buy, sub, pattern }
+  signals: ['danmaku-density', 'danmaku-keywords', 'mark', 'head', 'buy', 'sub-keywords'],
 }
 ```
 
-**② 选择启用哪些信号**——内置六路，按平台特性开/关：
+无弹幕平台（本地/URL）自动开台词族两路（`sub-keywords`/`sub-patterns`），数据来自 whisper 转写的带时间戳台词。
 
-| 信号 | 含义 |
-|---|---|
-| `density` | 弹幕密度低谷（观众跳过 = 广告） |
-| `keyword-cluster` | 广告关键词群聚 |
-| `head-ad` | 片头口播广告 |
-| `buy-backtrack` | 购买类话术回溯 |
-| `digit-mark` | 数字打点（"1407" = 14:07 广告结束） |
-| `sub-keywords` | 字幕/台词里的购买词 |
+加新信号 = 在 `lib/signals/` 加一个文件 + 在 `AD_SIGNALS` 注册一行 + 平台在 `signals` 数组声明。完全自定义检测则直接给 `adDetector.detect` 函数（`({ danmaku, duration, subtitles, transcript }) => [{ from, to, confidence, ... }]`）。
 
-```js
-adDetector: { signals: ['density', 'digit-mark', 'sub-keywords'] }
-```
-
-**③ 完全自定义 detect 函数**（适配器自己实现检测）：
-
-```js
-adDetector: {
-  detect: async ({ danmaku, duration, subtitles }) => [
-    { from: 343, to: 430, confidence: 'high', reasons: ['fish-oil ad'] },
-  ],
-}
-```
-
-调参建议：先用 2~3 条真实视频标真值，再调关键词/信号；误报多就提高 confidence 门槛或关掉弱信号，漏报多就加平台专属词（数字打点最有效）。
+调参建议：先用 2~3 条真实视频标真值，再调关键词/信号；误报多就关掉弱信号，漏报多就加平台专属词（数字打点最有效）。
 
 ### 弹幕过滤（自定义黑话与引流词）
 
@@ -504,7 +493,7 @@ B 站弹幕密度本身就是内容信号。实测一条 40 分钟视频：广�
 
 ## 已知限制
 
-- **能力随平台变化**：B 站最全（字幕+弹幕+广告）；本地/URL 无弹幕，广告识别靠「台词族」（字幕/转写关键词），画面 OCR 视觉族未做
+- **能力随平台变化**：B 站最全（字幕+弹幕+广告）；本地/URL 无弹幕，广告识别与语义切分都靠 whisper 转写的带时间戳台词；画面 OCR 视觉族仍未做
 - **依赖登录态（仅 B 站）**：部分视频的字幕/播放地址需要 cookies
 - **语义切分只对有字幕/对白的视频有效**：无官方字幕且转写不可用时自动跳过
 - **广告段检测对 B 站（弹幕）最强**：无弹幕平台的台词族是补强
@@ -519,7 +508,7 @@ node test-danmaku-filter.js              # 弹幕过滤规则测试（51 条用�
 node fisheye.mjs selftest --deep         # 含抽帧/字幕带/OCR/转写/语义实测的自检
 ```
 
-当前：**186 个测试**（183 通过 + 3 跳过）+ **51 条弹幕过滤用例**；广告检测有 **8 条人工标注真值**视频。
+当前：**192 个测试**（189 通过 + 3 跳过）+ **51 条弹幕过滤用例**；广告检测有 **8 条人工标注真值**视频。
 
 项目结构：
 
@@ -533,7 +522,8 @@ node fisheye.mjs selftest --deep         # 含抽帧/字幕带/OCR/转写/语义
 | `lib/bili.mjs` | B站纯函数 + API（视频信息 / WBI 签名 / 官方字幕 / 弹幕） |
 | `lib/frame.mjs` | 抽帧与时间点选择（场景检测 / 取帧计划 / 单帧截取） |
 | `lib/band.mjs` | 字幕带定位（纯 JS，ffmpeg PGM 灰度 → 梯度/分位/峰值，零 python） |
-| `lib/danmaku.mjs` | 弹幕分析 + 广告段检测（多信号源，关键词参数化） |
+| `lib/danmaku.mjs` | 弹幕热区摘要 + 广告检测入口 re-export（实现在 `lib/signals/`） |
+| `lib/signals/` | 广告信号源（弹幕族五路 + 台词族两路，可插拔注册表 + 编排器） |
 | `lib/semantic.mjs` | 语义切分能力探测（embedding 增强 + 纯 JS 兜底） |
 | `lib/semantic-core.mjs` | 语义切分纯 JS 核心（char-bigram 词法漂移 + top-k 峰值） |
 | `lib/collect.mjs` | 采集层（下载/元信息/字幕/弹幕/广告/语义 → ctx） |

@@ -153,3 +153,18 @@ else        → 13 秒/帧（静态/录屏）
 embedding + 变点检测识别「话题切换」时刻，零 token 纯 CPU；结果写 manifest 的 `semanticShifts`，
 精读建议里作为额外信号（`source: 'semantic'`）。优先用外部 Python CLI（SEMANTIC_CLI）做 embedding 增强；
 找不到 python 时降级为纯 JS 词法切分（`lib/semantic-core.mjs`，char-bigram 漂移，1.0.9 起）。
+无官方字幕时，转写台词（`transcriptLines`，1.0.10 起）兜底，本地/URL 视频也能切话题。
+
+## 11. 广告信号源可插拔（1.0.10）
+
+广告检测从「一个函数写死七路」拆成「信号源注册表 + 编排器」：
+
+- 七路信号源：弹幕族五路（密度/关键词/打点/片头/消费）+ 台词族两路（字幕关键词/句式），
+  各自是 `lib/signals/` 下的纯函数 `detect(ctx, keywords) -> [{ from, to, subAd? }]`。
+- 编排器 `lib/signals/index.mjs` 按 `primary`（主信号）/`secondary`（补充）/`subtitle`（台词族）分组跑：
+  主信号开了但没产出 → 早退；补充信号只在主信号有产出后参与；台词族独立追加、不参与弹幕族重叠合并。
+- 平台通过 `adDetector.signals` 声明开哪些信号、`adDetector.keywords` 换词库（正则对象）。
+- 无弹幕平台（本地/URL）开台词族两路，数据来自 whisper 转写的带时间戳台词（`transcript` 参数）。
+
+加新信号 = 在 `lib/signals/` 加一个文件 + 在 `AD_SIGNALS` 注册一行 + 平台在 `signals` 数组声明。
+这是把「换轻量分类模型」挂进来的预留点：模型信号源和关键词信号源同为 `detect` 契约，替换即可。

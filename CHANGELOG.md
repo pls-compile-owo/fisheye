@@ -2,6 +2,23 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.0.10] - 2026-11-18
+
+### Added
+
+- **广告信号源可插拔**：七路广告信号（弹幕密度/关键词/打点/片头/消费 + 字幕关键词/句式）从 `detectAdSegmentsCore` 拆成可注册信号源（`lib/signals/`），按 `primary`（主信号）/`secondary`（补充）/`subtitle`（台词族）分组编排；加新信号 = 注册表加一行 + 平台在 `signals` 数组声明。
+- **非 B 站信号增强**：本地/URL 视频的 whisper 转写 segments 喂入台词族信号与语义切分——无弹幕平台也能做广告口播识别和话题切换（此前 `transcript` 未接入，台词族信号是摆设）。
+
+### Changed
+
+- `collect.mjs`：转写成功后生成带时间戳 `transcriptLines`，喂广告检测（`transcript` 参数）与语义切分（官方字幕优先、转写兜底）。
+- `lib/danmaku.mjs`：广告检测入口与常量移到 `lib/signals/`，原 import 路径不变（re-export 兼容）。
+
+### Tests
+
+- 新增 `test/signals.test.mjs`：注册表完整性 / transcript 转写路径 / 信号可插拔组合 / 句式门槛。
+- 全量 192 用例（189 通过 + 3 跳过），golden 广告真值 8 条零回归。
+
 ## [1.0.9] - 2026-11-18
 
 ### Changed
