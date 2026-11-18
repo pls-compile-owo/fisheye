@@ -1,5 +1,7 @@
 # 设计决策
 
+English: [DESIGN.en.md](./DESIGN.en.md)
+
 > 这份文档解释 fisheye 为什么这么做。想知道怎么用，看 [`../README.md`](../README.md)。
 
 ---

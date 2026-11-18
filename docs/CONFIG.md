@@ -1,5 +1,7 @@
 # 配置与故障排查
 
+English: [CONFIG.en.md](./CONFIG.en.md)
+
 ## 依赖解析顺序
 
 fisheye 不写死任何绝对路径。ffmpeg / 语义 python / 凭证按这个顺序找：

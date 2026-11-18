@@ -421,7 +421,7 @@ Currently **211 tests** (208 pass + 3 skipped) + **51 danmaku cases**; ad detect
 
 Structure: `fisheye.mjs` (CLI), `lib/platforms/` (adapters + template + registry), `lib/collect.mjs` (signal collection), `lib/planner.mjs` / `lib/executor.mjs` (decisions), `lib/stages.mjs` (orchestration), `lib/selftest.mjs`, `dsh-plugin/`, `semantic/cli.py`, `test/`.
 
-More docs: [`docs/DESIGN.md`](docs/DESIGN.md) (decisions and tradeoffs), [`docs/CONFIG.md`](docs/CONFIG.md) (configuration and troubleshooting), [`docs/REVIEW.md`](docs/REVIEW.md) (verification checklist).
+More docs (English): [`docs/DESIGN.en.md`](docs/DESIGN.en.md) (decisions and tradeoffs), [`docs/CONFIG.en.md`](docs/CONFIG.en.md) (configuration and troubleshooting), [`docs/REVIEW.en.md`](docs/REVIEW.en.md) (verification checklist), [`CHANGELOG.en.md`](CHANGELOG.en.md) (full changelog). Chinese originals are next to each file.
 
 ## Compliance
 

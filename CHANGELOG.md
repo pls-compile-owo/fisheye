@@ -1,6 +1,15 @@
 # Changelog
 
+English: [CHANGELOG.en.md](./CHANGELOG.en.md)
+
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
+
+## [1.0.23] - 2026-11-18
+
+### Docs
+
+- **全部说明文档补齐英文版**：`CHANGELOG.en.md`（0.2.1–1.0.22 完整翻译）、`docs/DESIGN.en.md`、`docs/CONFIG.en.md`、`docs/REVIEW.en.md`、`dsh-plugin/docs/DETAIL.en.md`、`lib/platforms/_template/README.en.md`；中英文档互相加语言链接，README 的「更多文档」指向英文版。
+- 顺带修 issue 模板里的旧名 `vwatch version` → `fisheye version`。
 
 ## [1.0.22] - 2026-11-18
 

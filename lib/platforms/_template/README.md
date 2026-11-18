@@ -1,5 +1,7 @@
 # 平台适配器模板
 
+English: [README.en.md](./README.en.md)
+
 复制本目录 → 改名 → 填 `match` + `createSource` → 注册，即可接入新平台（不碰核心）。
 
 ## 三步接入

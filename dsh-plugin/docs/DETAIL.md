@@ -1,5 +1,7 @@
 # fisheye video reader
 
+English: [DETAIL.en.md](./DETAIL.en.md)
+
 给 DSH agent 增加 `video_understand` 工具：把 B 站视频 / 本地文件 / 任意链接交给 fisheye CLI 按 token 预算阅读，返回拼图、字幕与弹幕要点。
 
 ## 行为

@@ -639,6 +639,7 @@ node fisheye.mjs selftest --deep         # 含抽帧/字幕带/OCR/转写/语义
 - [`docs/DESIGN.md`](docs/DESIGN.md) — 设计决策与取舍
 - [`docs/CONFIG.md`](docs/CONFIG.md) — 配置与故障排查
 - [`docs/REVIEW.md`](docs/REVIEW.md) — 验证流程与评审清单
+- [`CHANGELOG.en.md`](CHANGELOG.en.md) — 英文更新日志（中文版 [CHANGELOG.md](CHANGELOG.md)）
 
 ## 合规
 
