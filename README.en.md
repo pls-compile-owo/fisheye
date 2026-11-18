@@ -337,21 +337,32 @@ The plugin only *reads* videos (grids, subtitles, danmaku evidence); summaries b
 
 **Takeaway**: the cost of a 40-minute video is almost entirely scene detection (one full 320p decode). Frame grabbing, grids, semantic splitting and subtitle-band detection are all seconds.
 
-### Measured token cost (same 40-minute video)
+### Measured token cost (multi-type samples, budget 20000)
 
-| Mode | Composition | Actual tokens |
-|---|---|---|
-| 1 fps sampling (baseline) | 2400 frames × ~250 | **≈ 600,000** |
-| fisheye · full subtitles (English AI track) | subtitles 49,757 + grid 1,200 + close-up reserve 2,600 | **≈ 53,557** |
-| fisheye · full subtitles (Chinese translation track) | subtitles 11,615 + grid 1,200 + close-up reserve 2,600 | **≈ 15,415** |
-| fisheye · pixels only (no subtitles) | grid 1,200 + close-up reserve 2,600 | **≈ 3,800** |
-| one close-up | full-resolution frame | ≈ 1,300 / point |
+"Input" = evidence fisheye hands to the model (subtitles + grids + close-up reserve). "1 fps baseline" = one frame per second at ~250 tokens each.
+
+| Video (type) | Duration | Subtitles | Grids | Close-up reserve | **Input total** | 1 fps baseline | Saved |
+|---|---|---|---|---|---|---|---|
+| Wake up, honey (animation) | 30s | zh 52 | 1×1200 | 2600 | **3,852** | ~7,500 | 2× |
+| iPhone Duo review (tech) | 130s | en 2,288 (zh 689) | 2×1200 | 2600 | **7,288** | ~32,500 | 4.5× |
+| Lima (stop-motion) | 856s | band 139 | 8×1200 | 2600 | **12,339** | ~214,000 | 17× |
+| Organization 54 (history) | 2255s | en 49,757 (zh 11,615) | 1×1200 | 2600 | **53,557** | ~563,750 | 11× |
+| Flagship chip roundup (long tech) | 3435s | zh 18,340 | 1×1200 | 2600 | **22,140** | ~858,750 | 39× |
+
+**Subtitle track matters (same 2255s history video)**
+
+| Track | Subtitle tokens | + grids 1200 + close-ups 2600 | Total | Within a 20k budget? |
+|---|---|---|---|---|
+| English AI track (original) | 49,757 | +3,800 | **53,557** | ❌ 2.7× over |
+| Bilibili Chinese translation track | 11,615 | +3,800 | **15,415** | ✅ fits |
+
+**Output tokens**: fisheye does not write summaries (that is the calling model's job) — the model writes roughly **300–800 tokens** from the input above; that does not consume fisheye's budget.
 
 **Takeaways**
 
-- vs the 1 fps baseline, fisheye saves **11× to 158×** tokens depending on mode.
-- Same video: reading the English original costs 54k tokens (over a 20k budget); reading Bilibili's Chinese translation track costs **15k** — preferring the translated track is what gets a 40-minute video under a 20k budget.
-- Grid cost (1,200) and close-up reserve (2,600) are fixed overhead; subtitles dominate — which is why "subtitles first, pixels only if needed" is the cheapest order.
+- Input tokens are dominated by duration × subtitle density; grids and close-ups are fixed overhead.
+- Picking the right subtitle track changes cost by **3.5×** (54k English original → 15k Chinese translation).
+- vs the 1 fps baseline, fisheye saves **2× to 39×** (little on short clips, a lot on long ones).
 ### Other hardware (not measured — no made-up numbers)
 
 No data outside this machine. In order of impact:
