@@ -4,6 +4,12 @@ English: [CHANGELOG.en.md](./CHANGELOG.en.md)
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.0.27] - 2026-11-18
+
+### Docs
+
+- **中英文档彻底对齐（不做精简版）**：`README.en.md` 重写为完整版（48 个章节与中文一一对应，补齐参数范围、refine 三种挑点方式、依赖路径、可选能力各小节、第三方依赖表、思想来源等）；`CHANGELOG.en.md` 补齐 1.0.23–1.0.26 条目（中英 45/45 对齐）；新增 `dsh-plugin/README.zh.md`（插件 README 的中文版）。
+
 ## [1.0.26] - 2026-11-18
 
 ### Docs

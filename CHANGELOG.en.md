@@ -3,6 +3,37 @@
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 中文版：[CHANGELOG.md](./CHANGELOG.md)
 
+## [1.0.27] - 2026-11-18
+
+### Docs
+
+- **Full ZH/EN documentation parity (no abridged versions)**: `README.en.md` rewritten as a complete version (48 sections matching the Chinese one, adding parameter ranges, the three refine modes, dependency paths, every optional-capability subsection, the third-party table and the "where the idea comes from" note); `CHANGELOG.en.md` gained the 1.0.23–1.0.26 entries (45/45 parity); added `dsh-plugin/README.zh.md` (Chinese version of the plugin README).
+
+## [1.0.26] - 2026-11-18
+
+### Docs
+
+- **Full documentation audit update**: DESIGN's danmaku-filter case count 48→51 (matches the tests); README gained an "Artifact completeness summary" section (the 1.0.12 `[artifacts]`/coverage feature); REVIEW (zh) gained the full `node --test` step; CONFIG env table gained `FISHEYE_MIN_SCENE`/`FISHEYE_MAX_PICKS`/`FISHEYE_TRACE`/`FISHEYE_DEBUG`; dsh-plugin README documents the npm global install path resolution; all internal links verified.
+
+## [1.0.25] - 2026-11-18
+
+### Docs
+
+- The 1.0.24 note still quoted the removed local directory path; this release abstracts that reference too — privacy-cleanup changelog entries no longer contain any local path text. Full-repo recheck: no local paths remain.
+
+## [1.0.24] - 2026-11-18
+
+### Docs
+
+- **Privacy-cleanup log de-pathed**: the 1.0.7 entry had re-published the removed local directory path inside the CHANGELOG itself; both languages now describe it abstractly ("a probe candidate pointing at a developer-machine tool directory, not a standard install location").
+
+## [1.0.23] - 2026-11-18
+
+### Docs
+
+- **All explanatory docs now have English versions**: `CHANGELOG.en.md` (complete translation, 0.2.1–1.0.22), `docs/DESIGN.en.md`, `docs/CONFIG.en.md`, `docs/REVIEW.en.md`, `dsh-plugin/docs/DETAIL.en.md`, `lib/platforms/_template/README.en.md`; Chinese and English docs link to each other, and the README "more docs" section points to the English versions.
+- Fixed the stale name in the issue template (`vwatch version` → `fisheye version`).
+
 ## [1.0.22] - 2026-11-18
 
 ### Docs
