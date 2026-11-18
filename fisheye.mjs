@@ -45,6 +45,24 @@ const opt = (name, dflt) => {
   return i >= 0 && argv[i + 1] ? argv[i + 1] : dflt
 }
 
+// auto 决策管线（完整采集：多路信号 + 字幕带 + 广告 + 语义）。local/url 的 --smart 与 auto 共用。
+async function runAuto(source) {
+  const d = opt('density', null)
+  await stageAuto(source,
+    num(opt('budget', 20000), 'budget', { min: 2000, max: 200000 }),
+    {
+      density: d === null ? null : num(d, 'density', { min: 0.5, max: 60 }),
+      page: pageNum(opt('p', null)),
+      from: parseTime(opt('from', null), 'from'),
+      to: parseTime(opt('to', null), 'to'),
+      useDanmakuFrames: !argv.includes('--no-danmaku-frames'),
+      audio: argv.includes('--audio') ? true : (argv.includes('--no-audio') ? false : undefined),
+      audioLang: opt('lang', null),
+      resume: argv.includes('--resume'),
+      force: argv.includes('--force'),
+    })
+}
+
 // 需要「平台源」的命令：解析输入（BV / 文件 / URL）→ VideoSource 契约对象
 const SOURCE_STAGES = new Set(['auto', 'grid', 'subs', 'refine', 'grab', 'transcribe'])
 let source = null
@@ -69,11 +87,18 @@ if (stage === 'local') {
     process.exit(2)
   }
   try {
-    await stageLocal(fileArg, {
-      grid: opt('grid', '3x3'),
-      from: parseTime(opt('from', null), 'from'),
-      to: parseTime(opt('to', null), 'to')
-    })
+    if (argv.includes('--smart')) {
+      // --smart：走 auto 完整采集管线（多路信号 + 字幕带 + 广告 + 语义），而非纯均匀抽帧
+      const smartSource = resolveSource(fileArg)
+      if (!smartSource) { console.error(t('err.local.usage')); process.exit(2) }
+      await runAuto(smartSource)
+    } else {
+      await stageLocal(fileArg, {
+        grid: opt('grid', '3x3'),
+        from: parseTime(opt('from', null), 'from'),
+        to: parseTime(opt('to', null), 'to')
+      })
+    }
   } catch (error) {
     console.error(t('err.local.failed', { message: error?.message ?? error }))
     process.exit(1)
@@ -102,11 +127,18 @@ if (stage === 'url') {
     process.exit(2)
   }
   try {
-    await stageUrl(link, {
-      grid: opt('grid', '3x3'),
-      from: parseTime(opt('from', null), 'from'),
-      to: parseTime(opt('to', null), 'to')
-    })
+    if (argv.includes('--smart')) {
+      // --smart：走 auto 完整采集管线（多路信号 + 字幕带 + 广告 + 语义）
+      const smartSource = resolveSource(link)
+      if (!smartSource) { console.error(t('err.url.usage')); process.exit(2) }
+      await runAuto(smartSource)
+    } else {
+      await stageUrl(link, {
+        grid: opt('grid', '3x3'),
+        from: parseTime(opt('from', null), 'from'),
+        to: parseTime(opt('to', null), 'to')
+      })
+    }
   } catch (error) {
     console.error(t('err.local.failed', { message: error?.message ?? error }))
     process.exit(1)
@@ -161,14 +193,7 @@ try {
   if (stage === 'selftest') {
     await stageSelftest({ deep: argv.includes('--deep') })
   } else if (stage === 'auto') {
-    const d = opt('density', null)
-    await stageAuto(source,
-      num(opt('budget', 20000), 'budget', { min: 2000, max: 200000 }),
-      { density: d === null ? null : num(d, 'density', { min: 0.5, max: 60 }), page, from, to,
-        useDanmakuFrames: !argv.includes('--no-danmaku-frames'),
-        audio: argv.includes('--audio') ? true : (argv.includes('--no-audio') ? false : undefined),
-        audioLang: opt('lang', null),
-        resume: argv.includes('--resume'), force: argv.includes('--force') })
+    await runAuto(source)
   } else if (stage === 'refine') {
     await stageRefine(source, { template: argv.includes('--template'), decisions: opt('decisions', null) })
   } else if (stage === 'grid') {

@@ -110,6 +110,7 @@ python3 -c "import fastembed, ruptures"     # 自检用同一解释器验证，�
 | `FISHEYE_WHISPER` / `FISHEYE_WHISPER_MODEL` | whisper 可执行文件 / 模型（ggml-*.bin，可选） |
 | `FISHEYE_HOME` | 数据目录（cache/out 位置，默认项目目录） |
 | `SEMANTIC_CLI` / `SEMANTIC_PYTHON` | 语义切分 CLI / 跑它的 Python（默认用随包的 `semantic/cli.py`） |
+| `FISHEYE_MIN_SCENE` / `FISHEYE_MAX_PICKS` | 精读几何阈值覆盖：画面变化强度门槛（默认 0.85）/ 最多挑几个点（默认 8） |
 | `FFMPEG` / `PYTHON` / `BILI_CRED` | 工具与登录态路径覆盖 |
 
 ### 依赖路径（一般不用管）
@@ -173,7 +174,7 @@ node fisheye.mjs grab BV1ziWP6qENy 82.5,145.0
 | `<id>-subs_N行.jpg` | 字幕带（只有字幕区，竖排 N 行） |
 | `<id>-official-subs.txt` | 官方字幕全文（带时间戳）；另有 `-official-subs-plain.txt` 纯文本 |
 | `<id>-official-subs-translated.txt` | 官方中文字幕（视频有翻译轨时） |
-| `<id>-manifest.json` | **结构化索引**：每张图的时间范围、每格时间戳、变化强度、弹幕热区、广告段、`semanticShifts`（语义切换点） |
+| `<id>-manifest.json` | **结构化索引**：每张图的时间范围、每格时间戳、变化强度、弹幕热区、广告段、`semanticShifts`（语义切换点）、`coverage`（各信号源产物完整性） |
 
 `<id>` 是「文件名安全」的稳定标识：B 站 = BV 号，本地 = 文件 basename，URL = 规范化后的哈希。
 
@@ -205,10 +206,10 @@ node fisheye.mjs grab BV1ziWP6qENy 82.5,145.0
 | `subs <BV>` | 只生成字幕带（`--count` 行数、`--band auto\|0.22`） |
 | `refine <BV>` | 挑出值得精读的时间点，**并直接截好原图**（模板 / 决策文件 / 几何兜底） |
 | `grab <BV> <t1,t2>` | 按时间点截原分辨率单帧 |
-| `local <视频文件>` | 本地视频快捷方式（等价 `auto <文件>`） |
+| `local <视频文件>` | 本地视频快捷抽图（均匀抽帧拼一张图）；加 `--smart` 走完整采集（等价 `auto <文件>`） |
 | `transcribe <BV>` | 音频转写（whisper.cpp，`--lang zh`） |
 | `ocr <图片>` | OCR 识别图片文字（tesseract，`--lang chi_sim+eng`） |
-| `url <链接>` | URL 快捷方式（等价 `auto <链接>`） |
+| `url <链接>` | URL 快捷抽图；加 `--smart` 走完整采集（等价 `auto <链接>`） |
 | `batch <清单文件\|条目...>` | 批量处理（`--concurrency N` 并发） |
 | `clean [--target cache\|out\|all] [--yes]` | 清理缓存/产物（默认 dry-run） |
 | `selftest [--deep]` | 自检：依赖 / 平台适配器 / API / OCR / 转写 / yt-dlp / 语义 / 缓存 / 磁盘 |
@@ -245,8 +246,8 @@ fisheye 核心不认识任何具体平台。每个平台是一个「适配器」
 
 | 适配器 | 输入 | 能力 |
 |---|---|---|
-| `bilibili` | BV 号 | 官方字幕 + 弹幕 + 下载 + 广告识别（弹幕族） |
-| `local` | 本地文件路径 | 直接抽帧，字幕走转写/字幕带兜底 |
+| `bilibili` | BV 号 | 官方字幕 + 弹幕 + 下载 + 广告识别（弹幕族 + 字幕关键词） |
+| `local` | 本地文件路径 | 快速抽图；`--smart` 走完整采集（转写/字幕带/广告/语义） |
 | `url` | http(s) 链接 | yt-dlp 下载，其余同本地 |
 
 加平台 = 照 `lib/platforms/_template/` 抄一个目录 + 注册表加一行 import，不碰核心。**静态注册 + 目录约定**（不是热插拔）：fisheye 是本地 CLI，平台内置随包发布。
@@ -352,10 +353,15 @@ manifest 带 `version` 字段做格式校验，旧产物自动兼容；格式过
 ### 本地视频
 
 ```bash
-node fisheye.mjs auto <视频文件> [--grid 3x3] [--from 30] [--to 90]
+# 快速抽图：均匀抽帧拼一张图（最轻量，不付字幕/转写/语义的成本）
+node fisheye.mjs local <视频文件> [--grid 3x3] [--from 30] [--to 90]
+
+# 完整采集：等价 auto——多路信号 + 字幕带 + 转写 + 广告识别 + 语义切分
+node fisheye.mjs local <视频文件> --smart
+node fisheye.mjs auto <视频文件>
 ```
 
-不依赖 B站 登录与字幕：ffmpeg 解析时长 → 按 grid 等间隔抽帧拼图 → 输出 `SHEET: <拼图路径>`。没有官方字幕时自动尝试 whisper 转写（口播/播客类）；转写不可用则检测烧录字幕带。适合 mp4/mkv/avi/mov/webm。
+不依赖 B站 登录与字幕。`local`（不带 `--smart`）只是 ffmpeg 解析时长 → 按 grid 等间隔抽帧拼图 → 输出 `SHEET: <拼图路径>`；`--smart` 或 `auto` 才走完整采集——无官方字幕时自动 whisper 转写（口播/播客类），转写不可用则检测烧录字幕带，转写台词还会喂广告识别与语义切分。适合 mp4/mkv/avi/mov/webm。
 
 ### 音频转写（whisper.cpp）
 
@@ -467,7 +473,7 @@ dsh plugin --profile web add @pls-compile-owo/dsh-fisheye
 ⑤ 场景检测（ffmpeg 一次解码，320p）→ 内容变化率
 ⑥ 字幕决策：官方字幕 > 转写 > 烧录字幕带 > 只看画面
 ⑦ 弹幕（B 站）：热区（观众高光）+ 广告段（多信号源）
-⑧ 语义切分（可选）：embedding + 变点检测 → 话题切换点
+⑧ 语义切分（可选）：纯 JS 词法（char-bigram）或 embedding 增强 → 话题切换点
 ⑨ 密度决策：变化率 → 目标帧间隔（4/6/9/13 秒）
 ⑩ 张数决策：密度需求 vs 预算封顶（硬上限 12 张）
 ⑪ 铺网：分段 → 取帧（等间隔骨架 + 吸附画面变化点）→ 拼图
@@ -489,7 +495,7 @@ B 站弹幕密度本身就是内容信号。实测一条 40 分钟视频：广�
 把广告段从时间轴「压缩掉」，剩余有效时间重新均分——帧数不变，内容密度提升。实测：跳过 118 秒广告后，平均帧间隔从 22.1 秒降到 **8.3 秒**。
 
 **为什么语义切分不靠大模型？**
-字幕/转写文本做 embedding 相似度 + 变点检测，零 token、纯 CPU。语义切换点作为「结构信号」喂精读建议，不融合进几何（几何是「内容信号」，语义是「结构信号」）。
+字幕/转写文本做相似度检测（默认纯 JS char-bigram 漂移，有 python 时换 embedding 增强），零 token、纯 CPU。语义切换点作为「结构信号」喂精读建议，不融合进几何（几何是「内容信号」，语义是「结构信号」）。
 
 ## 已知限制
 
@@ -503,12 +509,12 @@ B 站弹幕密度本身就是内容信号。实测一条 40 分钟视频：广�
 ## 开发
 
 ```bash
-node --test --test-concurrency=1 test/   # 单元测试 + golden 验收集（离线可跑）
+node --test test/                       # 单元测试 + golden 验收集（离线可跑）
 node test-danmaku-filter.js              # 弹幕过滤规则测试（51 条用例）
 node fisheye.mjs selftest --deep         # 含抽帧/字幕带/OCR/转写/语义实测的自检
 ```
 
-当前：**192 个测试**（189 通过 + 3 跳过）+ **51 条弹幕过滤用例**；广告检测有 **8 条人工标注真值**视频。
+当前：**198 个测试**（195 通过 + 3 跳过）+ **51 条弹幕过滤用例**；广告检测有 **8 条人工标注真值**视频。
 
 项目结构：
 
@@ -517,8 +523,12 @@ node fisheye.mjs selftest --deep         # 含抽帧/字幕带/OCR/转写/语义
 | `fisheye.mjs` | CLI 入口（参数解析 / 输入解析 / 命令分发） |
 | `lib/platforms/` | 平台适配器（`bilibili` / `local` / `url` + `_template` + `_probe` 时长探测 + `index.mjs` 注册表） |
 | `lib/env.mjs` | 路径与依赖解析（ffmpeg / 语义 python / 凭证 / 配置） |
+| `lib/i18n.mjs` | CLI 中英双语文案 |
 | `lib/util.mjs` | 时间格式化 / 参数校验 / 文件头探测 |
 | `lib/proc.mjs` | 进程探测共用工具（三个可选能力 audio/ocr/ytdlp 共用） |
+| `lib/retry.mjs` | B站 API 重试（指数退避 + 抖动） |
+| `lib/resume.mjs` | 断点续跑（manifest 读写 / 阶段记录） |
+| `lib/progress.mjs` | 进度辅助（分段抽帧 / 阶段计时） |
 | `lib/bili.mjs` | B站纯函数 + API（视频信息 / WBI 签名 / 官方字幕 / 弹幕） |
 | `lib/frame.mjs` | 抽帧与时间点选择（场景检测 / 取帧计划 / 单帧截取） |
 | `lib/band.mjs` | 字幕带定位（纯 JS，ffmpeg PGM 灰度 → 梯度/分位/峰值，零 python） |
@@ -526,6 +536,11 @@ node fisheye.mjs selftest --deep         # 含抽帧/字幕带/OCR/转写/语义
 | `lib/signals/` | 广告信号源（弹幕族五路 + 台词族两路，可插拔注册表 + 编排器） |
 | `lib/semantic.mjs` | 语义切分能力探测（embedding 增强 + 纯 JS 兜底） |
 | `lib/semantic-core.mjs` | 语义切分纯 JS 核心（char-bigram 词法漂移 + top-k 峰值） |
+| `lib/audio.mjs` | 音频转写（whisper.cpp 探测 + 调用） |
+| `lib/ocr.mjs` | OCR（tesseract 探测 + 调用） |
+| `lib/ytdlp.mjs` | yt-dlp 探测 + 视频下载 |
+| `lib/batch.mjs` | 批量处理（并发编排） |
+| `lib/budget.mjs` | token 预算估算（单价 + 模型系数） |
 | `lib/collect.mjs` | 采集层（下载/元信息/字幕/弹幕/广告/语义 → ctx） |
 | `lib/planner.mjs` | 规划（密度/张数/预算） |
 | `lib/executor.mjs` | 精读建议（几何挑点 + 弹幕热区 + 语义切换点合并） |

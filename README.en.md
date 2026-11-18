@@ -144,10 +144,10 @@ The CLI prints a planning report explaining every decision (numbers below are fr
 | `subs <BV>` | subtitle band only (`--count`, `--band`) |
 | `refine <BV>` | pick close-up moments and grab them (template / decisions / geometric fallback) |
 | `grab <BV> <t1,t2>` | grab full-res frames at given times |
-| `local <file>` | local shortcut for `auto <file>` |
+| `local <file>` | quick grid from a local file; add `--smart` for the full pipeline (equiv. `auto <file>`) |
 | `transcribe <BV>` | whisper transcription |
 | `ocr <image>` | tesseract OCR |
-| `url <url>` | URL shortcut for `auto <url>` |
+| `url <url>` | quick grid from a URL; add `--smart` for the full pipeline (equiv. `auto <url>`) |
 | `batch <list\|items...>` | batch processing (`--concurrency N`) |
 | `clean [--target cache\|out\|all] [--yes]` | clean cache/output (dry-run by default) |
 | `selftest [--deep]` | dependency/adapter/API/optional-component checks |
@@ -158,8 +158,8 @@ The core knows no platform. Each platform is an adapter following one contract (
 
 | Adapter | Input | Capabilities |
 |---|---|---|
-| `bilibili` | BV id | official subtitles + danmaku + download + danmaku-based ad detection |
-| `local` | file path | frames directly; subtitles via transcription / burnt-in band |
+| `bilibili` | BV id | official subtitles + danmaku + download + ad detection (danmaku family + subtitle keywords) |
+| `local` | file path | quick grid; `--smart` runs the full pipeline (transcription / band / ads / semantic) |
 | `url` | http(s) link | yt-dlp download, then like local |
 
 Adding a platform = copy `lib/platforms/_template/` and add one import to the registry. No core changes.
@@ -302,7 +302,7 @@ The plugin only *reads* videos (grids, subtitles, danmaku evidence); summaries b
 ⑤ scene detection (one ffmpeg decode at 320p) → change rate
 ⑥ subtitle decision: official > transcript > burnt-in band > pixels only
 ⑦ danmaku: hotspots + ad segments (multiple signals)
-⑧ semantic shifts (optional): embeddings + change-point detection
+⑧ semantic shifts (optional): pure-JS lexical (char-bigram) or embedding boost
 ⑨ density: change rate → target interval (4/6/9/13 s)
 ⑩ grid count: density need vs budget cap (hard max 12)
 ⑪ layout: even-spaced skeleton + snap to scene changes → grids
@@ -315,7 +315,7 @@ The plugin only *reads* videos (grids, subtitles, danmaku evidence); summaries b
 - **Why not OCR the subtitle band?** Chinese OCR is unreliable on low-res, styled text. Slicing the band and letting a multimodal model read it is more accurate at similar cost.
 - **Danmaku as a signal**: on a 40-minute video, ad segments had ~31% of average danmaku density; audience peaks were 3–5×. Density is content.
 - **Ads don't occupy frames**: compressing ad segments raises content density (measured: interval 22.1s → 8.3s on one grid).
-- **Semantic without an LLM**: embeddings + change-point detection costs zero tokens; semantic shifts feed refine suggestions as a *structural* signal, not mixed into geometry.
+- **Semantic without an LLM**: similarity detection on subtitle/transcript text (pure-JS char-bigram by default, embedding boost with python) costs zero tokens; semantic shifts feed refine suggestions as a *structural* signal, not mixed into geometry.
 
 ## Known limitations
 
@@ -328,12 +328,12 @@ The plugin only *reads* videos (grids, subtitles, danmaku evidence); summaries b
 ## Development
 
 ```bash
-node --test --test-concurrency=1 test/   # unit tests + golden fixtures (offline)
+node --test test/                       # unit tests + golden fixtures (offline)
 node test-danmaku-filter.js              # danmaku filter rules (51 cases)
 node fisheye.mjs selftest --deep         # end-to-end self-check
 ```
 
-Currently **192 tests** (189 pass + 3 skipped) + **51 danmaku cases**; ad detection has **8 hand-labeled golden videos**.
+Currently **198 tests** (195 pass + 3 skipped) + **51 danmaku cases**; ad detection has **8 hand-labeled golden videos**.
 
 Structure: `fisheye.mjs` (CLI), `lib/platforms/` (adapters + template + registry), `lib/collect.mjs` (signal collection), `lib/planner.mjs` / `lib/executor.mjs` (decisions), `lib/stages.mjs` (orchestration), `lib/selftest.mjs`, `dsh-plugin/`, `semantic/cli.py`, `test/`.
 

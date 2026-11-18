@@ -2,6 +2,54 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.0.15] - 2026-11-18
+
+### Docs
+
+- README 审计修复（中英）：平台适配器表更正（bilibili 补「字幕关键词」信号、local 描述的是 `auto` 而非 `local` 命令）；语义切分流程描述更新为「纯 JS 词法或 embedding 增强」（1.0.9 起默认纯 JS）；开发命令去掉过时的 `--test-concurrency=1`（与 package.json / ci.yml 对齐）；项目结构表补全 9 个遗漏的 lib 文件（audio / batch / budget / i18n / ocr / progress / resume / retry / ytdlp）。
+
+## [1.0.14] - 2026-11-18
+
+### Changed
+
+- **精读几何阈值参数化**：`executor.mjs` 里硬编码的 `scene >= 0.85`（画面变化强度门槛）和 `slice(0, 8)`（最多挑点数）提取为导出常量 `MIN_SCENE_INTENSITY` / `MAX_PICKS`；`geometricPick`/`buildSuggestions` 接受 `{ minScene, maxPicks }` 覆盖，CLI 可用环境变量 `FISHEYE_MIN_SCENE` / `FISHEYE_MAX_PICKS` 调，不必改代码。
+
+### Tests
+
+- 新增 minScene/maxPicks 覆盖 + 常量默认值测试。
+- 全量 198 用例（195 通过 + 3 跳过）零回归。
+
+## [1.0.13] - 2026-11-18
+
+### Added
+
+- **语义切分合成样本量化**：新增 `test/semantic-core.test.mjs`，用「多话题块拼接」的合成台词量化纯 JS 词法切分（char-bigram 漂移）的 recall/precision。基线：3 话题样本 recall 1.0 / precision 1.0（检出 21/41，理想 20/40）；4 话题样本 recall 0.67 / precision 1.0。并诚实标注「词汇重叠话题」的局限——不强求切准，那正是 embedding 增强（`semantic/cli.py`）的用武之地。
+
+### Tests
+
+- 全量 195 用例（192 通过 + 3 跳过）零回归。
+
+## [1.0.12] - 2026-11-18
+
+### Added
+
+- **产物完整性摘要**：`auto`/`--smart` 跑完打印一行 `[产物] 字幕✓6 · 弹幕✓555 · 广告— · 语义— · 转写— · 字幕带—`，用 ✓（得到）/ △（质量差）/ ○（跳过）/ —（无）区分每个信号源「给没给到东西」；同时写进 manifest 的 `coverage` 字段。Agent 一眼看清这次缺了哪块，不再靠翻日志猜「静默降级」。
+
+## [1.0.11] - 2026-11-18
+
+### Added
+
+- **`local`/`url` 子命令 `--smart` 标志**：默认仍是「快速均匀抽帧拼一张图」（最轻量），加 `--smart` 才走 `auto` 的完整采集管线（多路信号 + 字幕带 + 转写 + 广告识别 + 语义切分）。补齐「非 B 站视频多路信号」缺口——此前 `local`/`url` 子命令是纯抽帧器，没接统一采集。
+- CLI 抽取 `runAuto()`：`auto` 与 `local`/`url --smart` 共用同一套决策参数解析，消除重复。
+
+### Fixed
+
+- README 命令表更正：`local`/`url` 不再标「等价 auto」（默认是快速抽图，`--smart` 才等价）。
+
+### Tests
+
+- 全量 192 用例（189 通过 + 3 跳过）零回归。
+
 ## [1.0.10] - 2026-11-18
 
 ### Added

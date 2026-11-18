@@ -1,7 +1,7 @@
 // executor 单测：几何挑点与精读建议（纯函数，不碰文件系统）。
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { geometricPick, buildSuggestions, MIN_READABLE_SUBS_PX } from '../lib/executor.mjs'
+import { geometricPick, buildSuggestions, MIN_READABLE_SUBS_PX, MIN_SCENE_INTENSITY, MAX_PICKS } from '../lib/executor.mjs'
 
 // 造一个最小 manifest：1 张拼图 9 格，1 个高 scene 格 + 1 个弹幕热区
 function makeManifest(overrides = {}) {
@@ -97,4 +97,27 @@ test('geometricPick：字幕已覆盖（官方文本/转写）时，不为字幕
   })
   const picks = geometricPick(manifest)
   assert.ok(!picks.some((p) => p.reason.includes('字幕在拼图里只剩')), '字幕已覆盖时不应有字幕糊理由')
+})
+
+// 参数化：几何阈值不再是硬编码，opts（minScene / maxPicks）可覆盖
+test('geometricPick：minScene 覆盖生效', () => {
+  const manifest = makeManifest()
+  // 默认 0.85：cell 4（scene=0.9）入选几何
+  assert.ok(geometricPick(manifest).some((p) => p.source.includes('几何规则')))
+  // 提高到 0.95：0.9 < 0.95，几何点消失（只剩弹幕热区）
+  const strict = geometricPick(manifest, { minScene: 0.95 })
+  assert.ok(!strict.some((p) => p.source.includes('几何规则')), 'minScene=0.95 时 0.9 的格不应入选')
+  // 降低到 0.05：所有格（0.1）都入选
+  const loose = geometricPick(manifest, { minScene: 0.05 })
+  assert.ok(loose.filter((p) => p.source.includes('几何规则')).length > 1, 'minScene=0.05 时应多格入选')
+})
+
+test('geometricPick：maxPicks 覆盖生效', () => {
+  const one = geometricPick(makeManifest(), { maxPicks: 1 })
+  assert.ok(one.length <= 1, `maxPicks=1 应最多 1 个，实际 ${one.length}`)
+})
+
+test('MIN_SCENE_INTENSITY / MAX_PICKS 导出默认值', () => {
+  assert.equal(MIN_SCENE_INTENSITY, 0.85)
+  assert.equal(MAX_PICKS, 8)
 })
