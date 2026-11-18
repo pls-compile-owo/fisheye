@@ -1,6 +1,6 @@
 {
   "name": "@pls-compile-owo/dsh-fisheye",
-  "version": "0.1.0",
+  "version": "2.0.0",
   "description": "Video understanding tool for DSH agents, backed by the fisheye CLI (token-budget frame grids, subtitles, danmaku, close-ups).",
   "type": "module",
   "main": "./index.js",

@@ -161,3 +161,32 @@ Ad detection went from "one function with seven hard-coded signals" to "a signal
 - Platforms without danmaku (local/URL) enable the two subtitle-family signals, fed by whisper transcript lines (`transcript` argument).
 
 Adding a signal = one file under `lib/signals/` + one line in `AD_SIGNALS` + a declaration in the platform's `signals` array. This is also the reserved hook for swapping in a lightweight classifier: model and keyword signal sources share the same `detect` contract.
+
+> **2.0 note**: the "seven pluggable signals" described in this chapter (11) are cut to two (`density` + `keywords`) in 2.0 — see chapter 13.
+
+## 12. Agent involvement boundary (2.0)
+
+The 2.0 positioning ([`docs/2.0/00-总纲.md`](./2.0/00-总纲.md)): **fisheye compresses a video into "evidence + cost", and does not judge for the agent.**
+
+Three corollaries:
+
+1. **The user is an agent, not a human**: agents read text cheaply and images expensively — fisheye turns the agent's cost structure into an engineering decision.
+2. **Judgment stays with the agent**: deciding "which span is an ad / which span matters / where topic boundaries lie" is the agent's job — it is more accurate than rules, and it was going to read anyway.
+3. **The sensing layer stays mechanical**: frame extraction, grids, subtitle slicing have no judgment space and don't need the agent.
+
+Concrete outcomes:
+
+- Type detection gives only a "suggestion" + `evidence` (criterion hits), which the agent can override (design 01 §3.5).
+- Emotion gives only a "magnitude" + `top` samples, never an "excited/flat" verdict (design 03 §5.1).
+- Ads give only "low-activity segments (density valleys)" + "ad-keyword highlights (pure hints)", never an "is it an ad" verdict (design 05 §7.2).
+- `visualRequest` is non-blocking: fisheye only reports "insufficient text evidence + suggested track + cost"; the agent decides whether to read images (design 01 §3.6).
+
+## 13. Structural constraints on ad detection (2.0)
+
+2.0 downgrades ad detection from "judge for the agent" to "give the agent hints" ([`docs/2.0/05-广告识别.md`](./2.0/05-广告识别.md)), with structural constraints:
+
+- **Seven signals cut to two**: keep only `density` (low-activity segments, affects framing) + `keywords` (ad-keyword highlights, pure hints). Remove mark/head/buy/sub-keywords/sub-patterns + partition lexicon + semantic arbitration — 0.1 verified: the other five contribute zero independent hits; two-signal recall = seven-signal = 100%.
+- **Down-weight, never skip**: low-activity segments get `w=0.3` (only in render's algorithm track), not "skip entirely" — a false positive only down-weights (recoverable), while skipping deletes a whole span (catastrophic).
+- **Conclusions carry evidence**: low-activity segments carry `sample` (2~3 original danmaku lines), ad-keyword highlights carry the `text` — so the agent can verify at a glance instead of taking it on faith.
+- **Platforms don't declare signals**: platforms only declare "what ad-keyword evidence they can offer" (`adKeywords`); which signals to use is fisheye's call (design 05 §7.5).
+- **manifest schemaVersion 2**: `adSegments` → `lowActivitySegments`; old manifests are explicitly rejected.

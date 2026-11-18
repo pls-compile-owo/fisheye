@@ -122,7 +122,7 @@ rm -rf cache
 node fisheye.mjs auto BV1xxx --density 4   # force 4 s/frame
 ```
 
-More density = more grids = more tokens. Portrait video is especially expensive (3793 tokens per grid).
+More density = more grids = more tokens. Portrait video is especially expensive (1024 tokens per grid).
 
 **How to estimate the token budget?**
 
@@ -132,7 +132,7 @@ total ≈ official subtitle characters
       + close-up frames × 1300
 ```
 
-Cost per grid is by area: 1920×1080 = 1200 tokens; portrait 1080×1920 = 3793 tokens.
+Cost per grid is by area: 1920×1080 = 1024 tokens; portrait 1080×1920 = 1024 tokens.
 
 ## Optional Python dependency
 

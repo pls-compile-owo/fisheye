@@ -3,6 +3,40 @@
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 中文版：[CHANGELOG.md](./CHANGELOG.md)
 
+## [2.0.0] - 2026-11-18
+
+### Essence
+
+fisheye changes from "read everything + full subtitles" (~51k~95k tokens for a 40-min video) to "**evidence + cost**": by default it produces only text evidence (segment cards + subtitle skeletons + danmaku emotion), judgment stays with the agent, and images are rendered on demand (`render --plan`). Saves **25~32×**. Finalized design in `docs/2.0/` (11 modules); batch-0 verification in `docs/2.0/verify/`.
+
+### Decision changes (all backed by batch-0 verification)
+
+- **Image cost 348 → 1024 tokens/image**: official DeepSeek Flash vision rules changed generations (retired `deepseek-v4-flash-vision-exp` cap 384 → current cap 1024 / ~1300×1300 resize). See `docs/2.0/verify/口径变更-348-to-1024.md`.
+- **Seven ad signals cut to two**: `density` (low-activity segments, affects framing) + `keywords` (ad-keyword highlights, pure hints). Removed mark/head/buy/sub-keywords/sub-patterns + partition lexicon + semantic arbitration (0.1 verified: the other five contribute zero independent hits; two-signal recall = seven-signal = 100%).
+- **No render by default**: `auto` produces text only; `render` produces images (0.4 verified: 25~32× savings).
+- **Snap three-tier cut to single-tier**: 0.3/0.15/0.08 ladder → single 0.3 (0.2 verified: 93% of segments never drop a tier; the 7% that do show no meaningful information difference).
+
+### Concrete changes
+
+**New modules**: `lib/subs-digest.mjs` (four digest laws + fact/op dual channel + compressibility), `lib/emotion.mjs` (dual emotion scores + quantile + √ compression + top samples), `lib/segments.mjs` (4-min segmentation + segment cards with second-level timestamps), `lib/tracks.mjs` (coarse/algorithm/adaptive tracks + single-tier snap + w=0.3 down-weight), `lib/video-type.mjs` (music/slides/screen/foreign typing), `lib/render.mjs` (render --plan lazy rendering), `lib/auto-text.mjs` (fast text mode).
+
+**manifest**: `schemaVersion: 2`; `adSegments` → `lowActivitySegments` + `adKeywordHits`; old manifests (schemaVersion 1) are explicitly rejected with a "re-run auto" hint.
+
+**auto defaults to fast**: skips full-video scene detection (<5s, cache hit); `--standard` keeps the old framing path (full collection + grids).
+
+**Platform adapters**: drop the `signals` declaration, switch to `adKeywords` (platforms only declare "what evidence they can offer"); local/url (no danmaku) skip ad detection.
+
+### Migration guide
+
+- **Old manifest rejected**: 1.0.29 manifests (schemaVersion 1) error with "re-run auto" in render/refine; re-run `auto`.
+- **No render by default**: `auto` no longer produces images; read images via `render --plan [--track coarse|algorithm|adaptive|lowconf] [--segments N,M]`.
+- **visualTrack three-tier** (`on`/`ask`/`off`, default `ask`): when both sources are low-confidence, `ask` only flags a `visualRequest` (with `costEstimate = frames × 1024`) and the agent decides whether to read images.
+- Env vars: `FISHEYE_VISUAL_TRACK`, `FISHEYE_LOW_ACTIVITY_WEIGHT` (default 0.3).
+
+### Tests
+
+- Full **279 cases** (276 pass + 3 skip), baseline 242 → 279. danmaku-filter 51/51.
+
 ## [1.0.29] - 2026-11-18
 
 ### Changed

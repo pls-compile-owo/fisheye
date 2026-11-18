@@ -28,18 +28,18 @@ The naive way to let an AI watch a video is one frame per second — but real vi
 
 | Video (type) | Duration | Subtitles | Grids | Close-up reserve | **Input total** | 1 fps baseline | Saved |
 |---|---|---|---|---|---|---|---|
-| Wake up, honey (animation) | 30s | zh 52 | 1×1200 | 2600 | **3,852** | ~7,500 | 2× |
-| iPhone Duo review (tech) | 130s | en 2,288 (zh 689) | 2×1200 | 2600 | **7,288** | ~32,500 | 4.5× |
-| Lima (stop-motion) | 856s | band 139 | 8×1200 | 2600 | **12,339** | ~214,000 | 17× |
-| Organization 54 (history) | 2255s | en 49,757 (zh 11,615) | 1×1200 | 2600 | **53,557** | ~563,750 | 11× |
-| Flagship chip roundup (long tech) | 3435s | zh 18,340 | 1×1200 | 2600 | **22,140** | ~858,750 | 39× |
+| Wake up, honey (animation) | 30s | zh 52 | 1×1024 | 2048 | **3,124** | ~7,500 | 2.4× |
+| iPhone Duo review (tech) | 130s | en 2,288 (zh 689) | 2×1024 | 2048 | **6,384** | ~32,500 | 5× |
+| Lima (stop-motion) | 856s | band 139 | 8×1024 | 2048 | **10,379** | ~214,000 | 21× |
+| Organization 54 (history) | 2255s | en 49,757 (zh 11,615) | 1×1024 | 2048 | **52,829** | ~563,750 | 11× |
+| Flagship chip roundup (long tech) | 3435s | zh 18,340 | 1×1024 | 2048 | **21,412** | ~858,750 | 40× |
 
 **Subtitle track matters (same 2255s history video)**
 
-| Track | Subtitle tokens | + grids 1200 + close-ups 2600 | Total | Within a 20k budget? |
+| Track | Subtitle tokens | + grids 1024 + close-ups 2048 | Total | Within a 20k budget? |
 |---|---|---|---|---|
-| English AI track (original) | 49,757 | +3,800 | **53,557** | ❌ 2.7× over |
-| Bilibili Chinese translation track | 11,615 | +3,800 | **15,415** | ✅ fits |
+| English AI track (original) | 49,757 | +3,072 | **52,829** | ❌ 2.6× over |
+| Bilibili Chinese translation track | 11,615 | +3,072 | **14,687** | ✅ fits |
 
 **Output tokens**: fisheye does not write summaries (that is the calling model's job) — the model writes roughly **300–800 tokens** from the input above; that does not consume fisheye's budget.
 
@@ -58,7 +58,7 @@ Not everything needs to be read as images. Sources are ranked by "information pe
 | ① | **Official subtitles** (CC track, prefer the AI Chinese one) | hundreds – tens of thousands of tokens | when the video has subtitles — text is an order of magnitude cheaper than pixels |
 | ② | **Burnt-in subtitle band** (subtitles baked into the picture) | ~1000 tokens | no official subtitles, but text sits at the bottom of the frame |
 | ③ | **Danmaku hotspots** (audience reaction, Bilibili) | ~100 tokens | find the moments the audience reacted to — **invisible to both frames and subtitles** |
-| ④ | **Frame grids** (3×3) | 1200–3800 tokens/grid | fallback: when pixels actually matter |
+| ④ | **Frame grids** (3×3) | 1024–1024 tokens/grid | fallback: when pixels actually matter |
 | ⑤ | **Semantic shifts** (topic change points, optional) | zero tokens | where the video changes topic/segment, feeding refine suggestions |
 
 Then a few key moments get a **close-up** (a single full-resolution frame) — the only place we spend big.
@@ -124,7 +124,7 @@ How to get them: log in to Bilibili in a browser → F12 → Application → Coo
 | Variable | Meaning |
 |---|---|
 | `FISHEYE_LANG` | CLI language: `zh` (default) / `en` |
-| `FISHEYE_TOKENS_PER_GRID` / `FISHEYE_TOKENS_PER_SUBS` / `FISHEYE_TOKENS_PER_FINE` | token estimate overrides per grid / subtitle band / close-up (default 1200 / 1000 / 1300) |
+| `FISHEYE_TOKENS_PER_GRID` / `FISHEYE_TOKENS_PER_SUBS` / `FISHEYE_TOKENS_PER_FINE` | token estimate overrides per grid / subtitle band / close-up (default 1024 / 1000 / 1024) |
 | `FISHEYE_TOKEN_MODEL` | correct estimates by tokenizer: `gpt` (1.0) / `qwen` (1.35) / `gemini` (0.8) / a number |
 | `FISHEYE_WHISPER` / `FISHEYE_WHISPER_MODEL` | whisper executable / model (ggml-*.bin, optional) |
 | `FISHEYE_HOME` | data directory (where cache/out live, default: project directory) |
@@ -196,7 +196,7 @@ node fisheye.mjs grab BV1ziWP6qENy 82.5,145.0
 | `<id>-subs_N.jpg` | subtitle band (only the subtitle region, N lines stacked) |
 | `<id>-official-subs.txt` | full official subtitles with timestamps; plus `-official-subs-plain.txt` as plain text |
 | `<id>-official-subs-translated.txt` | official Chinese translation (when the video has a translation track) |
-| `<id>-manifest.json` | **structured index**: per-grid time ranges, per-cell timestamps, change strength, danmaku hotspots, ad segments, `semanticShifts`, `coverage` (per-source artifact completeness) |
+| `<id>-manifest.json` | **structured index**: per-grid time ranges, per-cell timestamps, change strength, danmaku hotspots, low-activity segments, `semanticShifts`, `coverage` (per-source artifact completeness) |
 
 `<id>` is a stable "filename-safe" identifier: Bilibili = BV id, local = file basename, URL = hash of the normalized URL.
 
@@ -267,7 +267,7 @@ Marks: `✓` obtained / `△` poor quality / `○` skipped / `—` none. The sam
 |---|---|---|
 | `--template` | generate a template; the model reads the grids and fills in "which cells are unclear" | already paid (when reading the images) |
 | `--decisions <file>` | grab frames per the model's structured decisions | already paid |
-| no flags | **geometric fallback**: scene-change strength ≥0.85 + danmaku hotspots | 1300 tokens per picked moment |
+| no flags | **geometric fallback**: scene-change strength ≥0.85 + danmaku hotspots | 1024 tokens per picked moment |
 
 > `refine` lists the moments and then grabs them directly. To only see suggestions, use `refine --template` — it writes the template and grabs nothing.
 
@@ -340,9 +340,9 @@ Token estimates use per-source unit prices, each overridable:
 
 | Constant | Default | Meaning |
 |---|---|---|
-| `FISHEYE_TOKENS_PER_GRID` | 1200 | one 3×3 grid |
+| `FISHEYE_TOKENS_PER_GRID` | 1024 | one 3×3 grid |
 | `FISHEYE_TOKENS_PER_SUBS` | 1000 | one subtitle band |
-| `FISHEYE_TOKENS_PER_FINE` | 1300 | one close-up frame |
+| `FISHEYE_TOKENS_PER_FINE` | 1024 | one close-up frame |
 | `FISHEYE_TOKEN_MODEL` | 1.0 | model factor (`gpt` 1.0 / `qwen` 1.35 / `gemini` 0.8 / custom number) |
 
 Grid price is also corrected by frame area (portrait ≈ 3× landscape), so a portrait video hits the budget cap sooner for the same grid count.
@@ -509,12 +509,12 @@ You can also install the repo's `dsh-plugin/` directory locally (Plugins → add
 ④ frame aspect → per-grid token estimate (portrait is 3× landscape!)
 ⑤ scene detection (one ffmpeg decode at 320p) → content change rate
 ⑥ subtitle decision: official > transcript > burnt-in band > pixels only
-⑦ danmaku (Bilibili): hotspots (audience highlights) + ad segments (multiple signals)
+⑦ danmaku (Bilibili): hotspots (audience highlights) + low-activity segments (multiple signals)
 ⑧ semantic shifts (optional): embeddings + change-point detection → topic shifts
 ⑨ density decision: change rate → target frame interval (4/6/9/13 s)
 ⑩ grid-count decision: density need vs budget cap (hard maximum 12)
 ⑪ layout: segment → pick frames (even-spacing skeleton + snap to scene changes) → grids
-⑫ refine suggestions: scene changes + danmaku hotspots + semantic shifts, skipping ad segments
+⑫ refine suggestions: scene changes + danmaku hotspots + semantic shifts, skipping low-activity segments
 ```
 
 ### Design notes
@@ -526,10 +526,10 @@ Pure even spacing → misses key moments that flash for only a second or two; pu
 Chinese OCR is error-prone on low resolution and fancy layouts. Slicing the band off and letting a multimodal model read it directly is more accurate at similar cost. The price is "one subtitle line occupies a grid width", so only the subtitle region is sliced, stacked vertically.
 
 **Why can danmaku participate in frame picking?**
-Bilibili danmaku density is itself a content signal. Measured on a 40-minute video: the ad segment had only **31%** of the average density (viewers skip), while the most excited moments had 3–5×.
+Bilibili danmaku density is itself a content signal. Measured on a 40-minute video: the low-activity segment had only **31%** of the average density (viewers skip), while the most excited moments had 3–5×.
 
-**Why can ad segments not occupy frames?**
-"Compressing" ad segments out of the timeline and redistributing the remaining effective time — the grid count stays the same, content density rises. Measured on one grid: after skipping 118 seconds of ads, the average frame interval dropped from 22.1 s to **8.3 s**.
+**Why can low-activity segments not occupy frames?**
+"Compressing" low-activity segments out of the timeline and redistributing the remaining effective time — the grid count stays the same, content density rises. Measured on one grid: after skipping 118 seconds of ads, the average frame interval dropped from 22.1 s to **8.3 s**.
 
 **Why is semantic segmentation not done by an LLM?**
 Embedding similarity + change-point detection over subtitle/transcript text finds "topic shift" points with zero tokens and pure CPU. Semantic shifts feed refine suggestions as a "structural signal" and are not merged into geometry (geometry is a "content signal", semantics is a "structural signal" — different in nature).
@@ -590,7 +590,7 @@ Use trace when you need to know where time went or why a signal source was skipp
 ```bash
 FISHEYE_TRACE=1 node fisheye.mjs auto BV1xxx --budget 20000
 # → out/<id>-trace.json: per-stage timings (download / scene-detect / subtitles / transcribe /
-#   subtitle-band / danmaku / ad-detection / semantic), with an error field on failures
+#   subtitle-band / danmaku / low-activity detection / semantic), with an error field on failures
 ```
 
 Trace writes to a file and stderr only — stdout (the machine-readable result) is untouched, and it costs nothing when disabled. Combine with `FISHEYE_DEBUG=1` to print stacks on fatal errors.
@@ -627,7 +627,7 @@ Project structure:
 | `lib/bili.mjs` | Bilibili pure functions + API (video info / WBI signing / official subtitles / danmaku) |
 | `lib/frame.mjs` | frame extraction and timestamp selection (scene detection / subtitle-band location / single-frame grab) |
 | `lib/band.mjs` | pure-JS subtitle-band detection (PGM row gradients + cross-frame quantiles) |
-| `lib/danmaku.mjs` | danmaku hotspot summary + ad-detection entry re-export (implementation in `lib/signals/`) |
+| `lib/danmaku.mjs` | danmaku hotspot summary + low-activity detection entry re-export (implementation in `lib/signals/`) |
 | `lib/signals/` | ad signal sources (five danmaku-family + two subtitle-family, pluggable registry + orchestrator) |
 | `lib/semantic.mjs` | semantic capability probing + subprocess invocation (independent Python module) |
 | `lib/semantic-core.mjs` | pure-JS semantic fallback (char-bigram lexical drift) |

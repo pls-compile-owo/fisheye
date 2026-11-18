@@ -122,7 +122,7 @@ rm -rf cache
 node fisheye.mjs auto BV1xxx --density 4   # 强制 4 秒/帧
 ```
 
-注意：密度提高 = 张数增加 = token 成本增加。竖屏视频尤其贵（单张 3793 token）。
+注意：密度提高 = 张数增加 = token 成本增加。竖屏视频尤其贵（单张 1024 token）。
 
 **token 预算怎么估？**
 
@@ -132,7 +132,7 @@ node fisheye.mjs auto BV1xxx --density 4   # 强制 4 秒/帧
        + 精读帧数 × 1300
 ```
 
-单张拼图成本按面积算：1920×1080 = 1200 token；竖屏 1080×1920 = 3793 token。
+单张拼图成本按面积算：1920×1080 = 1024 token；竖屏 1080×1920 = 1024 token。
 
 ## Python 可选依赖
 

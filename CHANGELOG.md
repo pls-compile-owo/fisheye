@@ -4,6 +4,42 @@ English: [CHANGELOG.en.md](./CHANGELOG.en.md)
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 规范与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [2.0.0] - 2026-11-18
+
+### 本质变更
+
+fisheye 从「全量读图 + 字幕全文」（40 分钟视频 ~51k~95k token）改为「**证据 + 成本**」：
+默认只产文本证据（段卡片 + 字幕骨架 + 弹幕情绪），判断归 agent，画面按需渲染（`render --plan`）。
+省 **25~32 倍**。设计文档定稿见 `docs/2.0/`（11 模块），第 0 批 5 项验证结论见 `docs/2.0/verify/`。
+
+### 决策变更（都有第 0 批验证支撑）
+
+- **图片单价 348 → 1024 token/张**：官方 DeepSeek Flash vision 规则换代（旧 `deepseek-v4-flash-vision-exp` 384 上限 → 现 1024 上限 / 1300×1300 缩放）。见 `docs/2.0/verify/口径变更-348-to-1024.md`。
+- **七路广告砍两路**：`density`（低活跃段，影响取帧）+ `keywords`（广告词高光，纯线索）。删除 mark/head/buy/sub-keywords/sub-patterns + 分区词库 + 语义仲裁（0.1 验证：五路零独立命中，两路召回 = 七路 = 100%）。
+- **默认不渲染**：`auto` 只产文本，`render` 才出图（0.4 验证：省 25~32 倍）。
+- **吸附三档砍单档**：0.3/0.15/0.08 阶梯 → 单档 0.3（0.2 验证：93% 段不降档、7% 降档信息量差异不明显）。
+
+### 具体变更
+
+**新增模块**：`lib/subs-digest.mjs`（摘要四铁律 + fact/op 双通道 + 可压缩性）、`lib/emotion.mjs`（情绪双分数 + 分位数 + √压缩 + top 样本）、`lib/segments.mjs`（4 分钟切段 + 段卡片秒级时间戳）、`lib/tracks.mjs`（coarse/algorithm/adaptive 三轨 + 单档吸附 + w=0.3 降权）、`lib/video-type.mjs`（music/slides/screen/foreign 类型判定）、`lib/render.mjs`（render --plan 惰性渲染）、`lib/auto-text.mjs`（fast 文本模式）。
+
+**manifest**：`schemaVersion: 2`；字段 `adSegments` → `lowActivitySegments` + `adKeywordHits`；旧 manifest（schemaVersion 1）被明确拒绝并提示重跑。
+
+**auto 默认 fast 档**：跳过全片场景检测（<5s，缓存命中）；`--standard` 走旧抽帧路径（完整采集 + 拼图）。
+
+**平台适配器**：去 `signals` 声明，改 `adKeywords`（平台只声明「能提供什么证据」）；local/url 无弹幕不做广告检测。
+
+### 迁移指南
+
+- **旧 manifest 拒绝**：1.0.29 的 manifest（schemaVersion 1）在 render/refine 时报「请重跑 auto」，需重新 `auto`。
+- **默认不渲染**：`auto` 不再生成图；读图需 `render --plan [--track coarse|algorithm|adaptive|lowconf] [--segments N,M]`。
+- **visualTrack 三档**（`on`/`ask`/`off`，默认 `ask`）：两源低置信时，`ask` 只标 `visualRequest`（含 `costEstimate = 帧数 × 1024`），由 agent 决定是否读图。
+- 环境变量：`FISHEYE_VISUAL_TRACK`、`FISHEYE_LOW_ACTIVITY_WEIGHT`（默认 0.3）。
+
+### Tests
+
+- 全量 **279 用例**（276 通过 + 3 跳过），基线 242 → 279。danmaku-filter 51/51。
+
 ## [1.0.29] - 2026-11-18
 
 ### Changed

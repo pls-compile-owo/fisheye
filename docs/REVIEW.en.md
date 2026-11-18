@@ -139,6 +139,7 @@ Hard requirements:
 |---|---|---|---|
 | 2026-11-11 | first release review | zero unit tests, hard-coded paths, concurrent cleanup deleting wrong files | fixed (tests from 0.3.0, de-pathed in 1.0.7) |
 | 2026-11-18 | README claims vs source + full CHANGELOG audit | see "External audit record" below | all four debts closed (1.0.10–1.0.14) |
+| 2026-11-18 | fisheye 2.0 (batches 0–4: verify → text-only → image tracks → ad refactor → docs/release) | 0.5 billing 348→1024 (official vision rule change); 0.3 ad sentences leaking into head (head/info didn't filter ads); batch-3 executor rename leftover (`manifest.adSegments` silent failure); batch-2 type-detection placeholder meta + foreign AND bug | 2.0.0 (per-batch reviews passed; P0/P1 fixed; P2 carried per batch) |
 
 > Update this table after each review: what was found, what was changed, what was left.
 
