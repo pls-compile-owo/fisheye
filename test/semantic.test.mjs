@@ -4,12 +4,48 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { resolveSemanticCli, semanticCaps, semanticSegment } from '../lib/semantic.mjs'
+import { resolveSemanticCli, resolveSemanticPython, semanticCaps, semanticSegment } from '../lib/semantic.mjs'
 import { segmentPureJs, charBigramVector, cosine } from '../lib/semantic-core.mjs'
 
 test('resolveSemanticCli：随包 semantic/cli.py 优先命中', () => {
   const cli = resolveSemanticCli()
   assert.ok(cli && cli.endsWith(path.join('semantic', 'cli.py')), '应命中包内 semantic/cli.py：' + cli)
+})
+
+test('resolveSemanticPython：SEMANTIC_PYTHON 是 PATH 命令名时也能识别（回归）', () => {
+  // 回归：旧实现用 fs.existsSync('python') 判断命令名——那查的是「当前目录下有无 python 文件」，
+  // PATH 命中的命令名必然 false，导致 PATH 里的 python 永远探测不到。
+  // 用 node 验证「命令名 → PATH」分支（测试自身一定在 PATH），不依赖本机 python。
+  const old = process.env.SEMANTIC_PYTHON
+  process.env.SEMANTIC_PYTHON = 'node'
+  try {
+    assert.equal(resolveSemanticPython(), 'node', 'PATH 中的命令名应被识别')
+  } finally {
+    if (old === undefined) delete process.env.SEMANTIC_PYTHON
+    else process.env.SEMANTIC_PYTHON = old
+  }
+})
+
+test('resolveSemanticPython：SEMANTIC_PYTHON 指向存在的文件 → 命中', () => {
+  const old = process.env.SEMANTIC_PYTHON
+  process.env.SEMANTIC_PYTHON = process.execPath
+  try {
+    assert.equal(resolveSemanticPython(), process.execPath)
+  } finally {
+    if (old === undefined) delete process.env.SEMANTIC_PYTHON
+    else process.env.SEMANTIC_PYTHON = old
+  }
+})
+
+test('resolveSemanticPython：无效的 SEMANTIC_PYTHON 不被返回（回退或不命中）', () => {
+  const old = process.env.SEMANTIC_PYTHON
+  process.env.SEMANTIC_PYTHON = 'definitely-not-a-real-python-xyz-' + Date.now()
+  try {
+    assert.notEqual(resolveSemanticPython(), process.env.SEMANTIC_PYTHON, '不可用的 SEMANTIC_PYTHON 不应被返回')
+  } finally {
+    if (old === undefined) delete process.env.SEMANTIC_PYTHON
+    else process.env.SEMANTIC_PYTHON = old
+  }
 })
 
 test('resolveSemanticCli：SEMANTIC_CLI 环境变量覆盖', () => {
