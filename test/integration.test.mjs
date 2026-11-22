@@ -77,6 +77,17 @@ test('selftest：ffmpeg 指向坏路径 → 报「无法执行」而不是崩溃
   assert.ok(!/ReferenceError/.test(r.err), '不应出现 ReferenceError（FFMPEG_RES 未 import 的回归）')
 })
 
+test('selftest：FISHEYE_HOME 指向不存在的目录 → 自动创建、ffmpeg 不误报', () => {
+  // 回归：runCapture 的临时文件曾写在 WS（FISHEYE_HOME）根目录且不建目录，
+  // 目录不存在时 openSync ENOENT，被上层误报成「ffmpeg 无法执行」。
+  const home = path.join(os.tmpdir(), `fisheye-new-home-${process.pid}-${Date.now()}`)
+  assert.ok(!fs.existsSync(home), '前置：目录应不存在')
+  const r = run(['selftest'], { env: { FISHEYE_HOME: home }, timeout: 60000 })
+  assert.equal(r.code, 0, r.err)
+  assert.ok(fs.existsSync(home), 'FISHEYE_HOME 应被自动创建')
+  if (FFMPEG) assert.match(r.out, /\[OK\]\s+ffmpeg/, 'ffmpeg 可用时不应误报「无法执行」')
+})
+
 test('clean：dry-run 不删、--yes 才删', { skip }, () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'fisheye-home-'))
   const outDir = path.join(home, 'out')

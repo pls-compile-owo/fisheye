@@ -11,6 +11,7 @@ English: [CHANGELOG.en.md](./CHANGELOG.en.md)
 - **自检在依赖缺失时崩溃**：`selftest` 的「ffmpeg 执行失败」分支引用了未 import 的 `FFMPEG_RES`，只要 ffmpeg 执行失败就抛 `ReferenceError`——恰恰是最需要自检报告「依赖缺失」的场景。修复 import，并补集成回归测试（`FFMPEG=坏路径` → 报「无法执行」、不崩溃、exit 0）。
 - **PATH 里的 python 永远探测不到**：`resolveSemanticPython` 用 `fs.existsSync('python')` 判断命令名（只查当前目录），PATH 命中的 python 必然 false → embedding 增强静默不启用，质量悄悄退化到纯 JS。改为「路径看存在性、命令名看 PATH」（`usablePython`），补 3 个单测。
 - **yt-dlp 提示不准**：`FISHEYE_YTDLP` 指定命令名时，「找不到」被误报成「不像 yt-dlp」。现在区分「找不到 / 不可执行 / 不像 yt-dlp」三种情况。
+- **`FISHEYE_HOME` 指向新目录时 selftest 误报 ffmpeg 不可用**：`runCapture` 的临时文件写在 `WS`（FISHEYE_HOME）根目录且不建目录，目录不存在时 `openSync` 报 ENOENT，被上层误报成「命令无法执行」。临时文件改到 `OUT`，写前先幂等创建目录。
 
 ### 文档
 
@@ -19,7 +20,7 @@ English: [CHANGELOG.en.md](./CHANGELOG.en.md)
 
 ### Tests
 
-- 全量 **292 用例**（289 通过 + 3 跳过），2.0.1 为 288。
+- 全量 **293 用例**（290 通过 + 3 跳过），2.0.1 为 288。
 
 ## [2.0.1] - 2026-11-19
 
