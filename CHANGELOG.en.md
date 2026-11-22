@@ -3,6 +3,16 @@
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 中文版：[CHANGELOG.md](./CHANGELOG.md)
 
+## [2.0.3] - 2026-11-22
+
+### Fixed
+
+- **Selftest reported ffmpeg as unavailable when `FISHEYE_HOME` pointed at a new directory**: `runCapture` wrote its temp file into `WS` (the FISHEYE_HOME root) without creating the directory, so `openSync` failed with ENOENT and the caller misreported it as "command cannot execute" (ffmpeg was actually fine). Temp file now lives in `OUT`, created idempotently first; integration regression test added.
+
+### Tests
+
+- **293 tests** (290 pass + 3 skip).
+
 ## [2.0.2] - 2026-11-22
 
 ### Fixed
@@ -10,7 +20,6 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 - **Selftest crashed when a dependency was missing**: the "ffmpeg cannot execute" branch referenced `FFMPEG_RES` without importing it, so a failing ffmpeg threw `ReferenceError` — exactly when selftest should report the missing dependency. Fixed the import and added an integration regression test (`FFMPEG=bad path` → reports "cannot execute", no crash, exit 0).
 - **python on PATH was never detected**: `resolveSemanticPython` used `fs.existsSync('python')` to test a command name (which only checks the current directory), so a PATH-hit python was always false → the embedding enhancement silently stayed off and quality degraded to pure JS. Now `usablePython()` checks paths by existence and command names by PATH; 3 unit tests added.
 - **Misleading yt-dlp message**: with `FISHEYE_YTDLP` set to a command name, "not found" was reported as "does not look like yt-dlp". The three cases (not found / not executable / not yt-dlp) are now distinguished.
-- **Selftest reported ffmpeg as unavailable when `FISHEYE_HOME` pointed at a new directory**: `runCapture` wrote its temp file into `WS` (the FISHEYE_HOME root) without creating the directory, so `openSync` failed with ENOENT and the caller misreported it as "command cannot execute". Temp file now lives in `OUT`, created idempotently first.
 
 ### Docs
 
@@ -19,7 +28,7 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 
 ### Tests
 
-- **293 tests** (290 pass + 3 skip), up from 288 in 2.0.1.
+- **292 tests** (289 pass + 3 skip), up from 288 in 2.0.1.
 
 ## [2.0.1] - 2026-11-19
 
