@@ -1,6 +1,6 @@
 {
   "name": "@pls-compile-owo/fisheye",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Token-budget-aware video understanding for AI agents: text evidence first (segment cards + subtitle skeletons + danmaku emotion), images rendered on demand. Judgment stays with the agent.",
   "type": "module",
   "bin": {

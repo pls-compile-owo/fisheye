@@ -3,6 +3,23 @@
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 中文版：[CHANGELOG.md](./CHANGELOG.md)
 
+## [2.0.2] - 2026-11-22
+
+### Fixed
+
+- **Selftest crashed when a dependency was missing**: the "ffmpeg cannot execute" branch referenced `FFMPEG_RES` without importing it, so a failing ffmpeg threw `ReferenceError` — exactly when selftest should report the missing dependency. Fixed the import and added an integration regression test (`FFMPEG=bad path` → reports "cannot execute", no crash, exit 0).
+- **python on PATH was never detected**: `resolveSemanticPython` used `fs.existsSync('python')` to test a command name (which only checks the current directory), so a PATH-hit python was always false → the embedding enhancement silently stayed off and quality degraded to pure JS. Now `usablePython()` checks paths by existence and command names by PATH; 3 unit tests added.
+- **Misleading yt-dlp message**: with `FISHEYE_YTDLP` set to a command name, "not found" was reported as "does not look like yt-dlp". The three cases (not found / not executable / not yt-dlp) are now distinguished.
+
+### Docs
+
+- **README refine cost clarified**: geometric-fallback "picking" is 0 tokens (pure computation); each grabbed full-res frame costs 1024 tokens when the model reads it.
+- Added `tools/make-desktop-txt.mjs`: one-shot desktop doc bundle (README/CHANGELOG/CONFIG/DESIGN/REVIEW + source zip listing).
+
+### Tests
+
+- **292 tests** (289 pass + 3 skip), up from 288 in 2.0.1.
+
 ## [2.0.1] - 2026-11-19
 
 ### Fixed
