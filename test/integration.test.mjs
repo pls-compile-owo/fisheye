@@ -61,6 +61,22 @@ test('selftest：不需要网络也能跑完（exit 0）', () => {
   assert.match(r.out, /结果：/)
 })
 
+test('selftest：ffmpeg 指向坏路径 → 报「无法执行」而不是崩溃', () => {
+  // 回归：ffmpeg 执行失败分支曾引用未 import 的 FFMPEG_RES，一执行就 ReferenceError。
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'fisheye-home-'))
+  const r = run(['selftest'], {
+    env: {
+      FISHEYE_HOME: home,
+      FFMPEG: path.join(os.tmpdir(), 'fisheye-not-a-real-ffmpeg.exe'),
+    },
+    timeout: 60000,
+  })
+  assert.equal(r.code, 0, `selftest 不应因依赖缺失崩溃：${r.err}`)
+  assert.match(r.out, /ffmpeg/)
+  assert.match(r.out, /无法执行/, '应报告「无法执行」而不是抛异常')
+  assert.ok(!/ReferenceError/.test(r.err), '不应出现 ReferenceError（FFMPEG_RES 未 import 的回归）')
+})
+
 test('clean：dry-run 不删、--yes 才删', { skip }, () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'fisheye-home-'))
   const outDir = path.join(home, 'out')
